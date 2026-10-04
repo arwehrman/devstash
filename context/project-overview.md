@@ -467,6 +467,23 @@ sequenceDiagram
 - ⌨️ Keyboard friendly (command palette / quick search)
 - 💡 Inspired by [Notion](https://notion.so), [Linear](https://linear.app), [Raycast](https://raycast.com)
 
+### Design References
+
+- [Notion](https://notion.so)
+- Clean organization
+- [Linear](https://linear.app)
+- Modern dev aesthetic
+- [Raycast](https://raycast.com)
+- quick access patterns
+
+### Screenshots
+
+Refer to screenshots below for a base for the dashboard
+UI. It doesn't have to be exact. Use it as a guide.
+
+- @context/screenshots/dashboard-ui-drawer.png
+- @context/screenshots/dashboard-ui-main.png
+
 ### Layout
 
 ```

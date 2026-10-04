@@ -10,6 +10,8 @@ Read the following to get the full context of the project:
 - @context/coding-standards.md
 - @context/ai-interaction.md
 - @context/current-feature.md
+- @context/screenshots/dashboard-ui-drawer.png
+- @context/screenshots/dashboard-ui-main.png
 
 ## Commands
 
