@@ -74,7 +74,8 @@ export const collections = [
     description: 'Common React patterns and hooks',
     isFavorite: true,
     itemCount: 12,
-    typeIds: ['type_snippet', 'type_note', 'type_url']
+    typeIds: ['type_snippet', 'type_note', 'type_url'],
+    updatedAt: '2026-01-15T10:00:00Z'
   },
   {
     id: 'col_python',
@@ -82,7 +83,8 @@ export const collections = [
     description: 'Useful Python code snippets',
     isFavorite: false,
     itemCount: 8,
-    typeIds: ['type_snippet', 'type_note']
+    typeIds: ['type_snippet', 'type_note'],
+    updatedAt: '2026-01-09T10:00:00Z'
   },
   {
     id: 'col_context',
@@ -90,7 +92,8 @@ export const collections = [
     description: 'AI context files for projects',
     isFavorite: true,
     itemCount: 5,
-    typeIds: ['type_file', 'type_note']
+    typeIds: ['type_file', 'type_note'],
+    updatedAt: '2026-01-04T10:00:00Z'
   },
   {
     id: 'col_interview',
@@ -98,7 +101,8 @@ export const collections = [
     description: 'Technical interview preparation',
     isFavorite: false,
     itemCount: 24,
-    typeIds: ['type_note', 'type_snippet', 'type_url', 'type_prompt']
+    typeIds: ['type_note', 'type_snippet', 'type_url', 'type_prompt'],
+    updatedAt: '2026-01-12T10:00:00Z'
   },
   {
     id: 'col_git',
@@ -106,7 +110,8 @@ export const collections = [
     description: 'Frequently used git commands',
     isFavorite: true,
     itemCount: 15,
-    typeIds: ['type_command', 'type_note']
+    typeIds: ['type_command', 'type_note'],
+    updatedAt: '2026-01-06T10:00:00Z'
   },
   {
     id: 'col_ai',
@@ -114,7 +119,8 @@ export const collections = [
     description: 'Curated AI prompts for coding',
     isFavorite: false,
     itemCount: 18,
-    typeIds: ['type_prompt', 'type_snippet', 'type_note']
+    typeIds: ['type_prompt', 'type_snippet', 'type_note'],
+    updatedAt: '2026-01-10T10:00:00Z'
   }
 ]
 

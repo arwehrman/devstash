@@ -1,31 +1,16 @@
 # Current Feature
 
-Dashboard UI Phase 1
+Dashboard UI Phase 2
 
 ## Status
-
-<!-- Not Started | In Progress| Completed -->
 
 Completed
 
 ## Goals
 
-<!-- Goals & requirements -->
-
 ## Notes
-
-<!-- Any extra notes -->
-
-- Spec: @context/features/dashboard-phase-1-spec.md
-- References:
-  - @context/screenshots/dashboard-ui-main.png
-  - @context/project-overview.md
-  - @src/lib/mock-data.ts
-  - @context/features/dashboard-phase-2-spec.md
-  - @context/features/dashboard-phase-3-spec.md
 
 ## History
 
-<!-- Keep this updated. Earliest to latest -->
-
 - 2026-10-18: Dashboard UI Phase 1 completed. Set up shadcn/ui (button, input, kbd), made dark mode the default, added the `/dashboard` route with a top bar (search, New Collection, New Item) and placeholders for the sidebar and main area.
+- 2026-10-18: Dashboard UI Phase 2 completed. Added a collapsible sidebar (toggle in the top bar, always a drawer on mobile) with item type links to `/items/[type]`, favorite and recent collections, and a user avatar area. Added shadcn sheet and avatar, an item type icon map, and `updatedAt` on mock collections.
