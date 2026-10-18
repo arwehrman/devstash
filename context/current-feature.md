@@ -1,26 +1,44 @@
 # Current Feature
 
-Prisma + Neon PostgreSQL Setup
+Create seed script
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
-- Set up Prisma 7 ORM with Neon PostgreSQL (serverless)
-- Create the initial schema based on the data models in @context/project-overview.md (this will evolve)
-- Include NextAuth models (Account, Session, VerificationToken)
-- Add appropriate indexes and cascade deletes
-- Create the initial migration with `prisma migrate dev`
+Create a seed script at `prisma/seed.ts` that fills the database with sample data for development and demos. Full spec: @context/features/seed-spec.md
+
+- **Demo user**
+  - Email `demo@devstash.io`, name `Demo User`
+  - Password `12345678`, hashed with `bcryptjs` (12 rounds)
+  - `isPro: false`, `emailVerified` set to the current date
+- **System item types** (`isSystem: true`, `userId: null`)
+  - snippet (`Code`, `#3b82f6`)
+  - prompt (`Sparkles`, `#8b5cf6`)
+  - command (`Terminal`, `#f97316`)
+  - note (`StickyNote`, `#fde047`)
+  - file (`File`, `#6b7280`)
+  - image (`Image`, `#ec4899`)
+  - link (`Link`, `#10b981`)
+- **Collections and items** (all owned by the demo user)
+  - **React Patterns** ("Reusable React patterns and hooks"): 3 TypeScript snippets covering custom hooks (useDebounce, useLocalStorage), component patterns (context providers, compound components) and utility functions
+  - **AI Workflows** ("AI prompts and workflow automations"): 3 prompts for code review, documentation generation and refactoring help
+  - **DevOps** ("Infrastructure and deployment resources"): 1 snippet (Docker or CI/CD config), 1 command (deployment script) and 2 links to real documentation URLs
+  - **Terminal Commands** ("Useful shell commands for everyday development"): 4 commands for git, Docker, process management and package managers
+  - **Design Resources** ("UI/UX resources and references"): 4 links to real URLs for CSS/Tailwind references, component libraries, design systems and icon libraries
+- Register the seed command in `prisma.config.ts` (`migrations.seed`) and add an `npm run db:seed` script
 
 ## Notes
 
-- `DATABASE_URL` points to the Neon development branch; there is a separate production branch.
-- ALWAYS create migrations; never use `db push` unless specified.
-- Use Prisma 7, which has breaking changes. Read the upgrade guide: https://www.prisma.io/docs/orm/more/upgrade-guides/upgrading-versions/upgrading-to-prisma-7
-- Setup guide: https://www.prisma.io/docs/getting-started/prisma-orm/quickstart/prisma-postgres
-- References: @context/features/database-spec.md, @context/project-overview.md, @context/coding-standards.md
+- Install `bcryptjs`. `tsx` is already a dev dependency for running the script.
+- Make the script safe to re-run. Clear the demo user's data (cascade deletes handle items, collections and join rows), then recreate it.
+- Upsert system types with `findFirst` + create/update, not `upsert` on `@@unique([userId, name])`. Postgres treats `NULL` userIds as distinct, so that unique key doesn't match system types.
+- Text items (snippet, prompt, command) use `contentType: TEXT` and `content`. Snippets set `language` (e.g. `typescript`, `dockerfile`, `yaml`) and commands use `bash`. Link items use `contentType: URL` and `url`.
+- Link each item to its collection through `ItemCollection`.
+- Reuse the Prisma client setup from `src/lib/prisma.ts` (Neon adapter) and disconnect when the script finishes.
+- Verify with `npx prisma db seed`, then check the rows with `scripts/test-db.ts` or Prisma Studio.
 
 ## History
 
