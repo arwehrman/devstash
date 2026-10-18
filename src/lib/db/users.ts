@@ -6,6 +6,6 @@ const DEMO_USER_EMAIL = "demo@devstash.io";
 export async function getDemoUser() {
   return prisma.user.findUnique({
     where: { email: DEMO_USER_EMAIL },
-    select: { id: true },
+    select: { id: true, name: true, email: true, image: true },
   });
 }

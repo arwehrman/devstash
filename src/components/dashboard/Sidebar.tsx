@@ -8,12 +8,19 @@ import { ChevronDown, Folder, Layers, Settings, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { getItemTypeIcon } from "@/lib/item-type-icons";
-import { collections, currentUser, itemTypes } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import type { SidebarCollections } from "@/types/collections";
+import type { ItemTypeWithCount } from "@/types/items";
+import type { SidebarUser } from "@/types/users";
 
-const RECENT_COLLECTIONS_LIMIT = 5;
+export interface SidebarData {
+  itemTypes: ItemTypeWithCount[];
+  collections: SidebarCollections;
+  user: SidebarUser | null;
+}
 
 interface SidebarProps {
+  data: SidebarData;
   onNavigate?: () => void;
 }
 
@@ -73,6 +80,10 @@ function SubHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
+function formatTypeName(name: string) {
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)}s`;
+}
+
 function getInitials(name: string) {
   return name
     .split(" ")
@@ -82,14 +93,9 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-export function Sidebar({ onNavigate }: SidebarProps) {
+export function Sidebar({ data, onNavigate }: SidebarProps) {
   const pathname = usePathname();
-
-  const favoriteCollections = collections.filter((c) => c.isFavorite);
-  const recentCollections = collections
-    .filter((c) => !c.isFavorite)
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    .slice(0, RECENT_COLLECTIONS_LIMIT);
+  const { itemTypes, collections, user } = data;
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
@@ -104,7 +110,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         <SidebarSection title="Types">
           {itemTypes.map((type) => {
             const Icon = getItemTypeIcon(type.icon);
-            const href = `/items/${type.name.toLowerCase()}`;
+            const href = `/items/${type.name}`;
             return (
               <SidebarLink
                 key={type.id}
@@ -112,8 +118,13 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 active={pathname === href}
                 onNavigate={onNavigate}
               >
-                <Icon className="size-4 shrink-0" style={{ color: type.color }} />
-                <span className="flex-1 truncate">{type.name}</span>
+                <Icon
+                  className="size-4 shrink-0"
+                  style={{ color: type.color ?? undefined }}
+                />
+                <span className="flex-1 truncate">
+                  {formatTypeName(type.name)}
+                </span>
                 <span className="text-xs text-muted-foreground">{type.count}</span>
               </SidebarLink>
             );
@@ -122,7 +133,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
         <SidebarSection title="Collections">
           <SubHeading>Favorites</SubHeading>
-          {favoriteCollections.map((collection) => {
+          {collections.favorites.map((collection) => {
             const href = `/collections/${collection.id}`;
             return (
               <SidebarLink
@@ -139,7 +150,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           })}
 
           <SubHeading>Recent</SubHeading>
-          {recentCollections.map((collection) => {
+          {collections.recent.map((collection) => {
             const href = `/collections/${collection.id}`;
             return (
               <SidebarLink
@@ -148,7 +159,10 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                 active={pathname === href}
                 onNavigate={onNavigate}
               >
-                <Folder className="size-4 shrink-0 text-muted-foreground" />
+                <span
+                  className="mx-1 size-2 shrink-0 rounded-full bg-muted-foreground"
+                  style={{ backgroundColor: collection.types[0]?.color ?? undefined }}
+                />
                 <span className="flex-1 truncate">{collection.name}</span>
                 <span className="text-xs text-muted-foreground">
                   {collection.itemCount}
@@ -156,21 +170,40 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               </SidebarLink>
             );
           })}
+
+          <Link
+            href="/collections"
+            onClick={onNavigate}
+            className="mt-1 px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            View all collections
+          </Link>
         </SidebarSection>
       </nav>
 
       <div className="flex shrink-0 items-center gap-3 border-t p-3">
-        <Avatar>
-          {currentUser.image && <AvatarImage src={currentUser.image} alt="" />}
-          <AvatarFallback>{getInitials(currentUser.name)}</AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{currentUser.name}</p>
-          <p className="truncate text-xs text-muted-foreground">
-            {currentUser.email}
-          </p>
-        </div>
-        <Button variant="ghost" size="icon-sm" aria-label="Settings">
+        {user && (
+          <>
+            <Avatar>
+              {user.image && <AvatarImage src={user.image} alt="" />}
+              <AvatarFallback>{getInitials(user.name ?? user.email)}</AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">
+                {user.name ?? user.email}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {user.email}
+              </p>
+            </div>
+          </>
+        )}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="ml-auto"
+          aria-label="Settings"
+        >
           <Settings />
         </Button>
       </div>

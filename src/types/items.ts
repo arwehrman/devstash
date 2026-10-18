@@ -5,6 +5,10 @@ export interface DashboardItemType {
   color: string | null;
 }
 
+export interface ItemTypeWithCount extends DashboardItemType {
+  count: number;
+}
+
 export interface DashboardItem {
   id: string;
   title: string;

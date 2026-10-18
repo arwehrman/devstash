@@ -20,3 +20,8 @@ export interface CollectionStats {
   total: number;
   favorites: number;
 }
+
+export interface SidebarCollections {
+  favorites: DashboardCollection[];
+  recent: DashboardCollection[];
+}

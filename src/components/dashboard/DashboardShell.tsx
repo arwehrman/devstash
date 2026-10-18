@@ -2,16 +2,17 @@
 
 import { useState } from "react";
 
-import { Sidebar } from "@/components/dashboard/Sidebar";
+import { Sidebar, type SidebarData } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 interface DashboardShellProps {
+  sidebar: SidebarData;
   children: React.ReactNode;
 }
 
-export function DashboardShell({ children }: DashboardShellProps) {
+export function DashboardShell({ sidebar, children }: DashboardShellProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -26,14 +27,17 @@ export function DashboardShell({ children }: DashboardShellProps) {
         inert={collapsed}
       >
         <div className="h-full w-64">
-          <Sidebar />
+          <Sidebar data={sidebar} />
         </div>
       </aside>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-72 gap-0 p-0 md:hidden">
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <Sidebar onNavigate={() => setMobileOpen(false)} />
+          <Sidebar
+            data={sidebar}
+            onNavigate={() => setMobileOpen(false)}
+          />
         </SheetContent>
       </Sheet>
 

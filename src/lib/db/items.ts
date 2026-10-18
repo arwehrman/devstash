@@ -1,6 +1,21 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import type { DashboardItem, ItemStats } from "@/types/items";
+import type {
+  DashboardItem,
+  ItemStats,
+  ItemTypeWithCount,
+} from "@/types/items";
+
+// System types have no sort column, so the sidebar uses this fixed order.
+const SYSTEM_TYPE_ORDER = [
+  "snippet",
+  "prompt",
+  "command",
+  "note",
+  "file",
+  "image",
+  "link",
+];
 
 const DASHBOARD_ITEM_SELECT = {
   id: true,
@@ -52,4 +67,26 @@ export async function getItemStats(userId: string): Promise<ItemStats> {
   ]);
 
   return { total, favorites };
+}
+
+export async function getSystemItemTypes(
+  userId: string
+): Promise<ItemTypeWithCount[]> {
+  const types = await prisma.itemType.findMany({
+    where: { isSystem: true },
+    select: {
+      id: true,
+      name: true,
+      icon: true,
+      color: true,
+      _count: { select: { items: { where: { userId } } } },
+    },
+  });
+
+  return types
+    .map(({ _count, ...type }) => ({ ...type, count: _count.items }))
+    .sort(
+      (a, b) =>
+        SYSTEM_TYPE_ORDER.indexOf(a.name) - SYSTEM_TYPE_ORDER.indexOf(b.name)
+    );
 }
