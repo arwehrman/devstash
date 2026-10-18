@@ -1,18 +1,31 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Clock, Folder, FolderHeart, Layers, Pin, Star } from "lucide-react";
 
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { ItemRow } from "@/components/dashboard/ItemRow";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import { collections, items } from "@/lib/mock-data";
+import { getCollectionStats, getRecentCollections } from "@/lib/db/collections";
+import { getDemoUser } from "@/lib/db/users";
+import { items } from "@/lib/mock-data";
 
 const RECENT_COLLECTIONS_LIMIT = 6;
 const RECENT_ITEMS_LIMIT = 10;
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  await connection();
+
+  const user = await getDemoUser();
+  const [recentCollections, collectionStats] = user
+    ? await Promise.all([
+        getRecentCollections(user.id, RECENT_COLLECTIONS_LIMIT),
+        getCollectionStats(user.id),
+      ])
+    : ([[], { total: 0, favorites: 0 }] as const);
+
   const stats = [
     { label: "Items", value: items.length, icon: Layers },
-    { label: "Collections", value: collections.length, icon: Folder },
+    { label: "Collections", value: collectionStats.total, icon: Folder },
     {
       label: "Favorite Items",
       value: items.filter((i) => i.isFavorite).length,
@@ -20,14 +33,11 @@ export default function DashboardPage() {
     },
     {
       label: "Favorite Collections",
-      value: collections.filter((c) => c.isFavorite).length,
+      value: collectionStats.favorites,
       icon: FolderHeart,
     },
   ];
 
-  const recentCollections = [...collections]
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    .slice(0, RECENT_COLLECTIONS_LIMIT);
   const pinnedItems = items.filter((i) => i.isPinned);
   const recentItems = [...items]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))

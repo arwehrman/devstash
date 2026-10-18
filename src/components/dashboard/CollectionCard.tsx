@@ -1,17 +1,16 @@
 import Link from "next/link";
 import { MoreHorizontal, Star } from "lucide-react";
 
-import { getItemType } from "@/lib/dashboard";
 import { getItemTypeIcon } from "@/lib/item-type-icons";
-import type { collections } from "@/lib/mock-data";
+import type { DashboardCollection } from "@/types/collections";
 
 interface CollectionCardProps {
-  collection: (typeof collections)[number];
+  collection: DashboardCollection;
 }
 
 export function CollectionCard({ collection }: CollectionCardProps) {
-  const types = collection.typeIds.map(getItemType).filter((t) => t !== undefined);
-  const accent = types[0]?.color;
+  const { types } = collection;
+  const accent = types[0]?.color ?? undefined;
 
   return (
     <Link
@@ -45,7 +44,7 @@ export function CollectionCard({ collection }: CollectionCardProps) {
             <Icon
               key={type.id}
               className="size-4"
-              style={{ color: type.color }}
+              style={{ color: type.color ?? undefined }}
               aria-label={type.name}
             />
           );
