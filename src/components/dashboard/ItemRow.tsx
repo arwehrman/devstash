@@ -1,26 +1,27 @@
 import { createElement } from "react";
 import { Pin, Star } from "lucide-react";
 
-import { formatShortDate, getItemType } from "@/lib/dashboard";
+import { formatShortDate } from "@/lib/dashboard";
 import { getItemTypeIcon } from "@/lib/item-type-icons";
-import type { items } from "@/lib/mock-data";
+import type { DashboardItem } from "@/types/items";
 
 interface ItemRowProps {
-  item: (typeof items)[number];
+  item: DashboardItem;
 }
 
 export function ItemRow({ item }: ItemRowProps) {
-  const type = getItemType(item.typeId);
+  const color = item.type.color ?? undefined;
 
   return (
     <article
       className="flex items-start gap-4 rounded-xl border border-l-2 bg-card p-4"
-      style={{ borderLeftColor: type?.color }}
+      style={{ borderLeftColor: color }}
     >
       <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-        {createElement(getItemTypeIcon(type?.icon), {
+        {createElement(getItemTypeIcon(item.type.icon), {
           className: "size-4",
-          style: { color: type?.color },
+          style: { color },
+          "aria-label": item.type.name,
         })}
       </div>
 
@@ -57,7 +58,7 @@ export function ItemRow({ item }: ItemRowProps) {
       </div>
 
       <time
-        dateTime={item.createdAt}
+        dateTime={item.createdAt.toISOString()}
         className="shrink-0 text-xs text-muted-foreground"
       >
         {formatShortDate(item.createdAt)}

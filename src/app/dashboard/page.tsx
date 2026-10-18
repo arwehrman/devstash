@@ -6,8 +6,8 @@ import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { ItemRow } from "@/components/dashboard/ItemRow";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { getCollectionStats, getRecentCollections } from "@/lib/db/collections";
+import { getItemStats, getPinnedItems, getRecentItems } from "@/lib/db/items";
 import { getDemoUser } from "@/lib/db/users";
-import { items } from "@/lib/mock-data";
 
 const RECENT_COLLECTIONS_LIMIT = 6;
 const RECENT_ITEMS_LIMIT = 10;
@@ -16,32 +16,33 @@ export default async function DashboardPage() {
   await connection();
 
   const user = await getDemoUser();
-  const [recentCollections, collectionStats] = user
-    ? await Promise.all([
-        getRecentCollections(user.id, RECENT_COLLECTIONS_LIMIT),
-        getCollectionStats(user.id),
-      ])
-    : ([[], { total: 0, favorites: 0 }] as const);
+  const [recentCollections, collectionStats, pinnedItems, recentItems, itemStats] =
+    user
+      ? await Promise.all([
+          getRecentCollections(user.id, RECENT_COLLECTIONS_LIMIT),
+          getCollectionStats(user.id),
+          getPinnedItems(user.id),
+          getRecentItems(user.id, RECENT_ITEMS_LIMIT),
+          getItemStats(user.id),
+        ])
+      : ([
+          [],
+          { total: 0, favorites: 0 },
+          [],
+          [],
+          { total: 0, favorites: 0 },
+        ] as const);
 
   const stats = [
-    { label: "Items", value: items.length, icon: Layers },
+    { label: "Items", value: itemStats.total, icon: Layers },
     { label: "Collections", value: collectionStats.total, icon: Folder },
-    {
-      label: "Favorite Items",
-      value: items.filter((i) => i.isFavorite).length,
-      icon: Star,
-    },
+    { label: "Favorite Items", value: itemStats.favorites, icon: Star },
     {
       label: "Favorite Collections",
       value: collectionStats.favorites,
       icon: FolderHeart,
     },
   ];
-
-  const pinnedItems = items.filter((i) => i.isPinned);
-  const recentItems = [...items]
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, RECENT_ITEMS_LIMIT);
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8">
