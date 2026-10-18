@@ -1,25 +1,12 @@
 # Current Feature
 
-Stats & Sidebar: show dashboard stats and the sidebar's item types and collections from the database instead of `src/lib/mock-data.ts`.
-
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- Display stats from database data, keeping the current design/layout
-- Display system item types in the sidebar with their icons, linking to `/items/[typename]`
-- Display real collections in the sidebar from the database
-- Add a "View all collections" link under the collections list that goes to `/collections`
-- Keep the star icons for favorite collections; for recent collections, show a colored circle based on the most-used item type in that collection
-- Add the database functions to `src/lib/db/items.ts`, using `src/lib/db/collections.ts` for reference
-
 ## Notes
-
-- Spec: `context/features/stats-sidebar-spec.md`
-- `src/lib/db/items.ts` already exists (from Dashboard items) with `getItemStats`, so add new functions there rather than creating the file
-- `src/lib/db/collections.ts` already computes the most-used item type per collection for card border colors; reuse that for the sidebar circles
 
 ## History
 
@@ -30,3 +17,4 @@ In Progress
 - 2026-10-18: Seed data completed. Added `prisma/seed.ts` (re-runnable) with a demo user (`demo@devstash.io`, bcryptjs-hashed password), the 7 system item types and 5 collections with 18 items. Registered the seed in `prisma.config.ts`, added `npm run db:seed`, and extended `scripts/test-db.ts` to display and verify the seeded data.
 - 2026-10-18: Dashboard collections completed. Replaced mock collections in the dashboard main area with Prisma data. Added `src/lib/db/collections.ts` (`getRecentCollections`, `getCollectionStats`), a temporary `getDemoUser` in `src/lib/db/users.ts` until auth exists, and collection types in `src/types/collections.ts`. Card border color comes from the collection's most-used item type, with icons for all its types. Collection stats are real; item stats, pinned/recent items and the sidebar still use mock data.
 - 2026-10-18: Dashboard items completed. Replaced mock pinned items, recent items and item stats in the dashboard main area with Prisma data. Added `src/lib/db/items.ts` (`getPinnedItems`, `getRecentItems`, `getItemStats`) and item types in `src/types/items.ts`. Item card icon and border color come from the item's type, and tags come from the database. The pinned section is hidden when nothing is pinned. Removed the mock-based `getItemType` helper. The sidebar still uses mock data.
+- 2026-10-18: Stats & Sidebar completed. Replaced the sidebar's mock item types, collections and user with Prisma data. Added `getSystemItemTypes` (system types with per-user item counts, fixed order) to `src/lib/db/items.ts` and `getSidebarCollections` (favorites plus 5 recent non-favorites) to `src/lib/db/collections.ts`, sharing a query helper with `getRecentCollections`. The dashboard layout fetches the sidebar data and passes it through `DashboardShell`. Type links go to `/items/[typename]` (singular, e.g. `/items/snippet`), recent collections show a colored circle for their most-used type, and a "View all collections" link was added. `getDemoUser` now returns name, email and image for the sidebar user area. Removed `src/lib/mock-data.ts`.
