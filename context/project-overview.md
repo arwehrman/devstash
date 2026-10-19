@@ -5,7 +5,7 @@
 
 |            |                                                                         |
 | ---------- | ----------------------------------------------------------------------- |
-| **Status** | 🟡 Planning → ready for environment setup & UI scaffolding              |
+| **Status** | 🟡 Phase 1 in progress: database and dashboard UI done, auth next       |
 | **Type**   | SaaS (Free + Pro subscription)                                          |
 | **Stack**  | Next.js · TypeScript · Prisma · Neon Postgres · Tailwind v4 · shadcn/ui |
 
@@ -141,12 +141,13 @@ erDiagram
 
 ```prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
+// DATABASE_URL is set in prisma.config.ts (Prisma 7)
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ─────────────────────────────────────────────
@@ -543,7 +544,7 @@ git switch -c lesson-03-auth
 
 ### 🟢 Phase 1: MVP
 
-- [ ] Project setup (Next.js, Tailwind, shadcn, Prisma, Neon)
+- [x] Project setup (Next.js, Tailwind, shadcn, Prisma, Neon)
 - [ ] Authentication (email + GitHub)
 - [ ] Items CRUD (system types)
 - [ ] Collections

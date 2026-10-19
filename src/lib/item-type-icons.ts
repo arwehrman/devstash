@@ -9,7 +9,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export const ITEM_TYPE_ICONS: Record<string, LucideIcon> = {
+const ITEM_TYPE_ICONS: Record<string, LucideIcon> = {
   Code,
   Sparkles,
   Terminal,
