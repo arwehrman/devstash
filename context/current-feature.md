@@ -1,21 +1,12 @@
-# Current Feature: Add Pro Badge to Sidebar
+# Current Feature
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- Show a "PRO" badge next to the File and Image item types in the sidebar
-- Use the shadcn/ui Badge component
-- Keep the badge clean and subtle
-- Show the badge text in uppercase ("PRO")
-
 ## Notes
-
-- Spec: `context/features/add-pro-badge-sidebar.md`
-- File uploads and custom types are Pro features (see Monetization in `project-overview.md`)
-- The shadcn Badge component isn't installed yet (`src/components/ui/` only has avatar, button, input, kbd and sheet)
 
 ## History
 
@@ -27,3 +18,4 @@ In Progress
 - 2026-10-18: Dashboard collections completed. Replaced mock collections in the dashboard main area with Prisma data. Added `src/lib/db/collections.ts` (`getRecentCollections`, `getCollectionStats`), a temporary `getDemoUser` in `src/lib/db/users.ts` until auth exists, and collection types in `src/types/collections.ts`. Card border color comes from the collection's most-used item type, with icons for all its types. Collection stats are real; item stats, pinned/recent items and the sidebar still use mock data.
 - 2026-10-18: Dashboard items completed. Replaced mock pinned items, recent items and item stats in the dashboard main area with Prisma data. Added `src/lib/db/items.ts` (`getPinnedItems`, `getRecentItems`, `getItemStats`) and item types in `src/types/items.ts`. Item card icon and border color come from the item's type, and tags come from the database. The pinned section is hidden when nothing is pinned. Removed the mock-based `getItemType` helper. The sidebar still uses mock data.
 - 2026-10-18: Stats & Sidebar completed. Replaced the sidebar's mock item types, collections and user with Prisma data. Added `getSystemItemTypes` (system types with per-user item counts, fixed order) to `src/lib/db/items.ts` and `getSidebarCollections` (favorites plus 5 recent non-favorites) to `src/lib/db/collections.ts`, sharing a query helper with `getRecentCollections`. The dashboard layout fetches the sidebar data and passes it through `DashboardShell`. Type links go to `/items/[typename]` (singular, e.g. `/items/snippet`), recent collections show a colored circle for their most-used type, and a "View all collections" link was added. `getDemoUser` now returns name, email and image for the sidebar user area. Removed `src/lib/mock-data.ts`.
+- 2026-10-18: Pro badge in sidebar completed. Added the shadcn Badge component (`src/components/ui/badge.tsx`) and a subtle outline "PRO" badge next to the File and Image types in the sidebar, driven by a `PRO_TYPE_NAMES` set in `Sidebar.tsx`.
