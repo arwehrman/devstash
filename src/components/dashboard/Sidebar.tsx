@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, Folder, Layers, Settings, Star } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getItemTypeIcon } from "@/lib/item-type-icons";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,8 @@ interface SidebarProps {
   data: SidebarData;
   onNavigate?: () => void;
 }
+
+const PRO_TYPE_NAMES = new Set(["file", "image"]);
 
 interface SidebarLinkProps {
   href: string;
@@ -125,6 +128,14 @@ export function Sidebar({ data, onNavigate }: SidebarProps) {
                 <span className="flex-1 truncate">
                   {formatTypeName(type.name)}
                 </span>
+                {PRO_TYPE_NAMES.has(type.name) && (
+                  <Badge
+                    variant="outline"
+                    className="h-4 px-1.5 text-[0.6rem] tracking-wider text-muted-foreground uppercase"
+                  >
+                    Pro
+                  </Badge>
+                )}
                 <span className="text-xs text-muted-foreground">{type.count}</span>
               </SidebarLink>
             );
