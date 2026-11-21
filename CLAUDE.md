@@ -22,6 +22,21 @@ Read the following to get the full context of the project:
 
 No test framework is configured yet.
 
+## Neon Database (MCP)
+
+When using the Neon MCP tools, always target:
+
+- **Project:** `devstash` (id: `proud-art-60881350`)
+- **Branch:** `development` (id: `br-ancient-breeze-b5xfq5k2`)
+
+Rules:
+
+- Always pass `project_id` and `branch_id` explicitly on every Neon MCP call. Never leave `branch_id` out, because the default branch is **production**.
+- **Never touch the `production` branch** (id: `br-restless-resonance-b5uyreuh`) unless I explicitly say "production" in my message. That includes reads, writes, migrations, branch resets and schema changes.
+- If a request is ambiguous about which branch to use, use `development`, or ask.
+- Ask before running any destructive SQL (DELETE, DROP, TRUNCATE, UPDATE without WHERE) or any branch, database or role deletion, even on `development`.
+- Schema changes go through `prisma migrate dev`, not raw DDL through the MCP (see Database in coding-standards.md).
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
