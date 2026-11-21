@@ -116,6 +116,7 @@ model Item {
   @@index([userId])
   @@index([userId, typeId])
   @@index([userId, lastUsedAt])
+  @@index([userId, createdAt])
   @@index([typeId])
 }
 
@@ -149,6 +150,7 @@ model Collection {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
+  @@index([userId, updatedAt])
 }
 
 model ItemCollection {

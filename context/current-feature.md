@@ -2,11 +2,31 @@
 
 ## Status
 
-Completed
+In Progress
+
+# Code Scan Quick Wins
+
+Low-risk fixes from the code-scanner audit. Auth-related findings (seed guard, demo credentials) are deferred until authentication is implemented.
 
 ## Goals
 
+- **Fix collection over-fetching (N+1)** in `src/lib/db/collections.ts`: stop loading every item row to compute counts.
+  - Use `_count: { select: { items: true } }` for `itemCount`.
+  - Get the per-type breakdown with a single `groupBy` on `typeId` for the returned collection ids (or select only `item.typeId`).
+  - Add a `take` limit to the sidebar favorites query.
+  - Keep the returned shape the same so `CollectionCard` and the sidebar don't change.
+- **Add missing indexes** in `prisma/schema.prisma` via `prisma migrate dev`:
+  - `Item`: `@@index([userId, createdAt])`
+  - `Collection`: `@@index([userId, updatedAt])`
+- **Dedupe the user lookup per request**: wrap `getDemoUser` in `src/lib/db/users.ts` with `React.cache`.
+- **Validate `DATABASE_URL`** in `src/lib/prisma.ts`: throw a clear error if it isn't set.
+- ~~**Consistent icon rendering** in `src/components/dashboard/ItemRow.tsx`~~: dropped. `const Icon = getItemTypeIcon(...)` at the top of a render fails the `react-hooks/static-components` lint rule, so `createElement` is intentional there.
+
 ## Notes
+
+- Out of scope (larger refactors or decisions): splitting `DashboardPage` and `Sidebar.tsx`, the inline `style` color pattern, and the `ItemType` system-type unique index.
+- Verify that the dashboard stats, collection cards (border color, type icons, item counts) and the sidebar still render the same after the query change.
+- Run `prisma migrate status` and `npm run build` before committing.
 
 ## History
 

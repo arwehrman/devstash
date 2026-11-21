@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import type {
   CollectionItemType,
@@ -7,18 +7,23 @@ import type {
   SidebarCollections,
 } from "@/types/collections";
 
-type TypeSummary = Omit<CollectionItemType, "count">;
+const SIDEBAR_FAVORITES_LIMIT = 20;
 
-function summarizeTypes(types: TypeSummary[]): CollectionItemType[] {
-  const counts = new Map<string, CollectionItemType>();
+interface TypeCountRow {
+  collectionId: string;
+  typeId: string;
+  count: number;
+}
 
-  for (const type of types) {
-    const existing = counts.get(type.id);
-    if (existing) existing.count += 1;
-    else counts.set(type.id, { ...type, count: 1 });
-  }
-
-  return [...counts.values()].sort((a, b) => b.count - a.count);
+// One aggregate query for all collections: item counts per (collection, type).
+async function getTypeCounts(collectionIds: string[]): Promise<TypeCountRow[]> {
+  return prisma.$queryRaw<TypeCountRow[]>`
+    SELECT ic."collectionId", i."typeId", COUNT(*)::int AS "count"
+    FROM "ItemCollection" ic
+    JOIN "Item" i ON i."id" = ic."itemId"
+    WHERE ic."collectionId" IN (${Prisma.join(collectionIds)})
+    GROUP BY ic."collectionId", i."typeId"
+  `;
 }
 
 async function findCollections(
@@ -26,28 +31,36 @@ async function findCollections(
 ): Promise<DashboardCollection[]> {
   const collections = await prisma.collection.findMany({
     ...args,
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      isFavorite: true,
-      items: {
-        select: {
-          item: {
-            select: {
-              type: { select: { id: true, name: true, icon: true, color: true } },
-            },
-          },
-        },
-      },
-    },
+    select: { id: true, name: true, description: true, isFavorite: true },
   });
+  if (collections.length === 0) return [];
 
-  return collections.map(({ items, ...collection }) => ({
-    ...collection,
-    itemCount: items.length,
-    types: summarizeTypes(items.map(({ item }) => item.type)),
-  }));
+  const typeCounts = await getTypeCounts(collections.map((c) => c.id));
+  const itemTypes = await prisma.itemType.findMany({
+    where: { id: { in: [...new Set(typeCounts.map((row) => row.typeId))] } },
+    select: { id: true, name: true, icon: true, color: true },
+  });
+  const typesById = new Map(itemTypes.map((type) => [type.id, type]));
+
+  const typesByCollection = new Map<string, CollectionItemType[]>();
+  for (const { collectionId, typeId, count } of typeCounts) {
+    const type = typesById.get(typeId);
+    if (!type) continue;
+    const list = typesByCollection.get(collectionId) ?? [];
+    list.push({ ...type, count });
+    typesByCollection.set(collectionId, list);
+  }
+
+  return collections.map((collection) => {
+    const types = (typesByCollection.get(collection.id) ?? []).sort(
+      (a, b) => b.count - a.count || a.name.localeCompare(b.name)
+    );
+    return {
+      ...collection,
+      itemCount: types.reduce((sum, type) => sum + type.count, 0),
+      types,
+    };
+  });
 }
 
 export async function getRecentCollections(
@@ -69,6 +82,7 @@ export async function getSidebarCollections(
     findCollections({
       where: { userId, isFavorite: true },
       orderBy: { name: "asc" },
+      take: SIDEBAR_FAVORITES_LIMIT,
     }),
     findCollections({
       where: { userId, isFavorite: false },
