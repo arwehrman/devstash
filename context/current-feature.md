@@ -2,31 +2,11 @@
 
 ## Status
 
-In Progress
-
-# Code Scan Quick Wins
-
-Low-risk fixes from the code-scanner audit. Auth-related findings (seed guard, demo credentials) are deferred until authentication is implemented.
+Completed
 
 ## Goals
 
-- **Fix collection over-fetching (N+1)** in `src/lib/db/collections.ts`: stop loading every item row to compute counts.
-  - Use `_count: { select: { items: true } }` for `itemCount`.
-  - Get the per-type breakdown with a single `groupBy` on `typeId` for the returned collection ids (or select only `item.typeId`).
-  - Add a `take` limit to the sidebar favorites query.
-  - Keep the returned shape the same so `CollectionCard` and the sidebar don't change.
-- **Add missing indexes** in `prisma/schema.prisma` via `prisma migrate dev`:
-  - `Item`: `@@index([userId, createdAt])`
-  - `Collection`: `@@index([userId, updatedAt])`
-- **Dedupe the user lookup per request**: wrap `getDemoUser` in `src/lib/db/users.ts` with `React.cache`.
-- **Validate `DATABASE_URL`** in `src/lib/prisma.ts`: throw a clear error if it isn't set.
-- ~~**Consistent icon rendering** in `src/components/dashboard/ItemRow.tsx`~~: dropped. `const Icon = getItemTypeIcon(...)` at the top of a render fails the `react-hooks/static-components` lint rule, so `createElement` is intentional there.
-
 ## Notes
-
-- Out of scope (larger refactors or decisions): splitting `DashboardPage` and `Sidebar.tsx`, the inline `style` color pattern, and the `ItemType` system-type unique index.
-- Verify that the dashboard stats, collection cards (border color, type icons, item counts) and the sidebar still render the same after the query change.
-- Run `prisma migrate status` and `npm run build` before committing.
 
 ## History
 
@@ -39,3 +19,4 @@ Low-risk fixes from the code-scanner audit. Auth-related findings (seed guard, d
 - 2026-10-18: Dashboard items completed. Replaced mock pinned items, recent items and item stats in the dashboard main area with Prisma data. Added `src/lib/db/items.ts` (`getPinnedItems`, `getRecentItems`, `getItemStats`) and item types in `src/types/items.ts`. Item card icon and border color come from the item's type, and tags come from the database. The pinned section is hidden when nothing is pinned. Removed the mock-based `getItemType` helper. The sidebar still uses mock data.
 - 2026-10-18: Stats & Sidebar completed. Replaced the sidebar's mock item types, collections and user with Prisma data. Added `getSystemItemTypes` (system types with per-user item counts, fixed order) to `src/lib/db/items.ts` and `getSidebarCollections` (favorites plus 5 recent non-favorites) to `src/lib/db/collections.ts`, sharing a query helper with `getRecentCollections`. The dashboard layout fetches the sidebar data and passes it through `DashboardShell`. Type links go to `/items/[typename]` (singular, e.g. `/items/snippet`), recent collections show a colored circle for their most-used type, and a "View all collections" link was added. `getDemoUser` now returns name, email and image for the sidebar user area. Removed `src/lib/mock-data.ts`.
 - 2026-10-18: Pro badge in sidebar completed. Added the shadcn Badge component (`src/components/ui/badge.tsx`) and a subtle outline "PRO" badge next to the File and Image types in the sidebar, driven by a `PRO_TYPE_NAMES` set in `Sidebar.tsx`.
+- 2026-11-21: Code scan quick wins completed. Low-risk fixes from the code-scanner audit. `findCollections` in `src/lib/db/collections.ts` now uses one SQL aggregate for per-collection type counts instead of loading every item (same returned shape, ties broken by type name), and sidebar favorites are capped at 20. Added `Item(userId, createdAt)` and `Collection(userId, updatedAt)` indexes (`add_sort_indexes` migration), wrapped `getDemoUser` in `React.cache`, and made `src/lib/prisma.ts` throw when `DATABASE_URL` is missing. Dropped the `ItemRow` icon change because it fails the `react-hooks/static-components` lint rule. Auth-related findings and larger refactors (splitting `DashboardPage`/`Sidebar`, inline color styles, the system-type unique index) are deferred. Also added the `code-scanner` Claude agent.
