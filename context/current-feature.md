@@ -1,28 +1,12 @@
-# Current Feature: Email Verification on Register
+# Current Feature
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- Install `resend` and add a small email helper in `src/lib/` that reads `RESEND_API_KEY` from `.env`
-- On registration (`POST /api/auth/register`), create a verification token (stored in the existing `VerificationToken` model, with an expiry such as 24 hours) and send a verification email through Resend with a link to click
-- Add a verification route (e.g. `/verify-email?token=...`) that checks the token, sets `User.emailVerified`, deletes the token and redirects to `/sign-in` with a "verified" notice
-- Show clear messages for invalid or expired links
-- Block email/password sign-in until the email is verified, with a sign-in error message telling the user to check their email
-- After registering, show a "check your email" notice instead of "Account created"
-- GitHub OAuth users are not affected
-
 ## Notes
-
-- `RESEND_API_KEY` is already in `.env`. No sender address or app URL env vars exist yet: likely need `EMAIL_FROM` (e.g. `onboarding@resend.dev` until a domain is verified in Resend) and a base URL for the link (e.g. `AUTH_URL` or `APP_URL`, `http://localhost:3000` in dev)
-- Resend's test sender (`onboarding@resend.dev`) only delivers to the Resend account owner's email until a domain is verified
-- `VerificationToken` (`identifier`, `token`, `expires`) already exists from the Auth.js schema, so no migration should be needed
-- Store a hashed token in the database and send the raw token in the link
-- If sending the email fails, the user is still created; decide whether to surface an error or allow resending (a "resend verification email" option is a possible follow-up, not in scope unless needed)
-- The seeded demo user (`demo@devstash.io`) and existing credential users have `emailVerified` null; the seed should set `emailVerified` for the demo user so it can still sign in
-- Credentials errors in Auth.js v5 need a custom `CredentialsSignin` subclass (with a `code`) to show a specific "email not verified" message on `/sign-in`
 
 ## History
 
@@ -39,3 +23,4 @@ In Progress
 - 2026-11-21: Auth Phase 1 completed. Installed `next-auth@5.0.0-beta.32` and `@auth/prisma-adapter`. Split config: `src/auth.config.ts` (edge-safe, GitHub provider plus a session callback that sets `session.user.id` from `token.sub`) and `src/auth.ts` (Prisma adapter reusing `src/lib/prisma.ts`, JWT sessions). Added `/api/auth/[...nextauth]` handlers, `src/proxy.ts` (named `proxy` export, matcher `/dashboard/:path*`, redirects to the default sign-in page with a `callbackUrl`) and `src/types/next-auth.d.ts`. Verified the GitHub sign-in round trip and the new User/Account rows on the development branch. The dashboard still uses `getDemoUser`.
 - 2026-11-22: Auth Phase 2 completed. Added email/password sign-in with the Credentials provider in the split pattern: a placeholder `authorize: () => null` in edge-safe `src/auth.config.ts`, replaced in `src/auth.ts` with a bcrypt check (OAuth-only users without a password are rejected). Added `POST /api/auth/register` (Zod validation, passwords must match, 409 for an existing email including concurrent requests via `P2002`, bcrypt hashing with 12 rounds, `{ success, data, error }` responses) and Zod schemas in `src/lib/validations/auth.ts` (emails trimmed and lowercased, passwords 8 characters to 72 UTF-8 bytes). No migration needed, since `User.password` already existed. Installed `zod` and ignored `.playwright-mcp`. Verified registration with curl, email/password sign-in to `/dashboard` with the user id in the session, and the GitHub redirect. The dashboard still uses `getDemoUser`.
 - 2026-11-22: Auth Phase 3 completed. Replaced the NextAuth default pages with custom UI in an `(auth)` route group that sends signed-in users to `/dashboard`. `/sign-in` has a GitHub button, an email/password form (server actions in `src/actions/auth.ts`, email kept after a failed attempt), Auth.js error messages and an "Account created" notice. `/register` validates in the browser with the shared Zod schema, posts to `/api/auth/register` and redirects to sign-in. NextAuth `pages.signIn`/`pages.error` and the proxy point to `/sign-in`, with `callbackUrl` limited to same-site paths (`src/lib/auth-redirect.ts`). Added a reusable decorative `UserAvatar` (GitHub image or initials) and a sidebar `UserMenu` drop-up with Profile (`/profile`, not built yet) and Sign out; the sidebar user now comes from the session. Added shadcn card, label and dropdown-menu (with a `DropdownMenuLinkItem` wrapper). Item types, collections and the main dashboard still use `getDemoUser`. Also committed `devIndicators: false` in `next.config.ts`.
+- 2026-11-22: Email verification on register completed. Installed `resend` and added `src/lib/email.ts` (`sendVerificationEmail`, sender from `EMAIL_FROM`, defaulting to `onboarding@resend.dev`). Registration creates a 24-hour token in the existing `VerificationToken` table (`src/lib/verification-tokens.ts`; only a SHA-256 hash is stored) and emails a link built from the new `APP_URL` env var. If sending fails, the new user is deleted and a friendly error is returned. `/verify-email` (route handler) sets `emailVerified`, deletes the token and redirects to `/sign-in` with a "verified" notice or an invalid/expired message. Credentials sign-in throws an `EmailNotVerifiedError` (`CredentialsSignin` with code `email_not_verified`) after the password check, shown on the form as "verify your email first". Registering again replaces a never-verified account only when it has no unexpired link, which prevents takeover of a pending sign-up and limits repeat emails. No migration needed. Also added `scripts/delete-non-demo-users.ts` and `npm run db:cleanup-users` (dry run by default, `-- --confirm` to delete; aborts if the demo user is missing). `APP_URL` still needs to be set in production, and a verified Resend domain is needed to email real users.
