@@ -1,28 +1,12 @@
-# Current Feature: Auth Phase 1 - NextAuth + GitHub Provider
+# Current Feature
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- Install NextAuth v5 (`next-auth@beta`) and `@auth/prisma-adapter`
-- Split auth config for edge compatibility: `src/auth.config.ts` (providers only, no adapter) and `src/auth.ts` (Prisma adapter + JWT strategy)
-- GitHub OAuth provider configured
-- `src/app/api/auth/[...nextauth]/route.ts` exports the handlers from `auth.ts`
-- `src/proxy.ts` protects `/dashboard/*` and redirects unauthenticated users to sign-in
-- `src/types/next-auth.d.ts` extends the Session type with `user.id`
-- Testing: `/dashboard` redirects to sign-in, "Sign in with GitHub" works, and the user lands back on `/dashboard`
-
 ## Notes
-
-- Use Context7 to verify the newest NextAuth v5 config and conventions.
-- Use `next-auth@beta`, not `@latest` (which installs v4).
-- Proxy file must be at `src/proxy.ts` (same level as `app/`) with a named export: `export const proxy = auth(...)`, not a default export.
-- Use `session: { strategy: 'jwt' }` with the split config pattern.
-- Don't set a custom `pages.signIn`; use NextAuth's default page.
-- Env vars: `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`.
-- References: https://authjs.dev/getting-started/installation#edge-compatibility, https://authjs.dev/getting-started/adapters/prisma
 
 ## History
 
@@ -36,3 +20,4 @@ In Progress
 - 2026-10-18: Stats & Sidebar completed. Replaced the sidebar's mock item types, collections and user with Prisma data. Added `getSystemItemTypes` (system types with per-user item counts, fixed order) to `src/lib/db/items.ts` and `getSidebarCollections` (favorites plus 5 recent non-favorites) to `src/lib/db/collections.ts`, sharing a query helper with `getRecentCollections`. The dashboard layout fetches the sidebar data and passes it through `DashboardShell`. Type links go to `/items/[typename]` (singular, e.g. `/items/snippet`), recent collections show a colored circle for their most-used type, and a "View all collections" link was added. `getDemoUser` now returns name, email and image for the sidebar user area. Removed `src/lib/mock-data.ts`.
 - 2026-10-18: Pro badge in sidebar completed. Added the shadcn Badge component (`src/components/ui/badge.tsx`) and a subtle outline "PRO" badge next to the File and Image types in the sidebar, driven by a `PRO_TYPE_NAMES` set in `Sidebar.tsx`.
 - 2026-11-21: Code scan quick wins completed. Low-risk fixes from the code-scanner audit. `findCollections` in `src/lib/db/collections.ts` now uses one SQL aggregate for per-collection type counts instead of loading every item (same returned shape, ties broken by type name), and sidebar favorites are capped at 20. Added `Item(userId, createdAt)` and `Collection(userId, updatedAt)` indexes (`add_sort_indexes` migration), wrapped `getDemoUser` in `React.cache`, and made `src/lib/prisma.ts` throw when `DATABASE_URL` is missing. Dropped the `ItemRow` icon change because it fails the `react-hooks/static-components` lint rule. Auth-related findings and larger refactors (splitting `DashboardPage`/`Sidebar`, inline color styles, the system-type unique index) are deferred. Also added the `code-scanner` Claude agent.
+- 2026-11-21: Auth Phase 1 completed. Installed `next-auth@5.0.0-beta.32` and `@auth/prisma-adapter`. Split config: `src/auth.config.ts` (edge-safe, GitHub provider plus a session callback that sets `session.user.id` from `token.sub`) and `src/auth.ts` (Prisma adapter reusing `src/lib/prisma.ts`, JWT sessions). Added `/api/auth/[...nextauth]` handlers, `src/proxy.ts` (named `proxy` export, matcher `/dashboard/:path*`, redirects to the default sign-in page with a `callbackUrl`) and `src/types/next-auth.d.ts`. Verified the GitHub sign-in round trip and the new User/Account rows on the development branch. The dashboard still uses `getDemoUser`.
