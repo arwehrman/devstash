@@ -1,28 +1,12 @@
-# Current Feature: Auth Phase 2 - Email/Password Credentials
+# Current Feature
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- Add a Credentials provider for email/password sign-in, using bcryptjs (already installed)
-- Add a `password` field to the User model through a migration, only if it isn't there yet
-- `src/auth.config.ts`: add a Credentials provider with an `authorize: () => null` placeholder (edge-safe)
-- `src/auth.ts`: override the Credentials provider with real bcrypt validation
-- Add a `POST /api/auth/register` route that accepts name, email, password and confirmPassword, checks the passwords match, checks the user doesn't already exist, hashes the password, creates the user and returns a success or error response
-- GitHub OAuth keeps working
-
 ## Notes
-
-- Split pattern: `auth.config.ts` stays edge-safe (no Prisma or bcrypt), and `auth.ts` replaces the placeholder Credentials provider with the real `authorize`.
-- Validate inputs with Zod (coding standards).
-- Testing:
-  1. Register with curl: `curl -X POST http://localhost:3000/api/auth/register -H "Content-Type: application/json" -d '{"name":"Test","email":"test@test.com","password":"password123","confirmPassword":"password123"}'`
-  2. Go to `/api/auth/signin` and sign in with email/password
-  3. Check the redirect to `/dashboard`
-  4. Check that GitHub OAuth still works
-- Reference: https://authjs.dev/getting-started/authentication/credentials
 
 ## History
 
@@ -37,3 +21,4 @@ In Progress
 - 2026-10-18: Pro badge in sidebar completed. Added the shadcn Badge component (`src/components/ui/badge.tsx`) and a subtle outline "PRO" badge next to the File and Image types in the sidebar, driven by a `PRO_TYPE_NAMES` set in `Sidebar.tsx`.
 - 2026-11-21: Code scan quick wins completed. Low-risk fixes from the code-scanner audit. `findCollections` in `src/lib/db/collections.ts` now uses one SQL aggregate for per-collection type counts instead of loading every item (same returned shape, ties broken by type name), and sidebar favorites are capped at 20. Added `Item(userId, createdAt)` and `Collection(userId, updatedAt)` indexes (`add_sort_indexes` migration), wrapped `getDemoUser` in `React.cache`, and made `src/lib/prisma.ts` throw when `DATABASE_URL` is missing. Dropped the `ItemRow` icon change because it fails the `react-hooks/static-components` lint rule. Auth-related findings and larger refactors (splitting `DashboardPage`/`Sidebar`, inline color styles, the system-type unique index) are deferred. Also added the `code-scanner` Claude agent.
 - 2026-11-21: Auth Phase 1 completed. Installed `next-auth@5.0.0-beta.32` and `@auth/prisma-adapter`. Split config: `src/auth.config.ts` (edge-safe, GitHub provider plus a session callback that sets `session.user.id` from `token.sub`) and `src/auth.ts` (Prisma adapter reusing `src/lib/prisma.ts`, JWT sessions). Added `/api/auth/[...nextauth]` handlers, `src/proxy.ts` (named `proxy` export, matcher `/dashboard/:path*`, redirects to the default sign-in page with a `callbackUrl`) and `src/types/next-auth.d.ts`. Verified the GitHub sign-in round trip and the new User/Account rows on the development branch. The dashboard still uses `getDemoUser`.
+- 2026-11-22: Auth Phase 2 completed. Added email/password sign-in with the Credentials provider in the split pattern: a placeholder `authorize: () => null` in edge-safe `src/auth.config.ts`, replaced in `src/auth.ts` with a bcrypt check (OAuth-only users without a password are rejected). Added `POST /api/auth/register` (Zod validation, passwords must match, 409 for an existing email including concurrent requests via `P2002`, bcrypt hashing with 12 rounds, `{ success, data, error }` responses) and Zod schemas in `src/lib/validations/auth.ts` (emails trimmed and lowercased, passwords 8 characters to 72 UTF-8 bytes). No migration needed, since `User.password` already existed. Installed `zod` and ignored `.playwright-mcp`. Verified registration with curl, email/password sign-in to `/dashboard` with the user id in the session, and the GitHub redirect. The dashboard still uses `getDemoUser`.
