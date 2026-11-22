@@ -8,6 +8,7 @@ import { ChevronDown, Folder, Layers, Settings, Star } from "lucide-react";
 import { UserMenu } from "@/components/dashboard/UserMenu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatTypeName } from "@/lib/dashboard";
 import { getItemTypeIcon } from "@/lib/item-type-icons";
 import { cn } from "@/lib/utils";
 import type { SidebarCollections } from "@/types/collections";
@@ -81,10 +82,6 @@ function SubHeading({ children }: { children: React.ReactNode }) {
       {children}
     </p>
   );
-}
-
-function formatTypeName(name: string) {
-  return `${name.charAt(0).toUpperCase()}${name.slice(1)}s`;
 }
 
 export function Sidebar({ data, onNavigate }: SidebarProps) {

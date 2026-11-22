@@ -18,7 +18,7 @@ import { isEmailVerificationEnabled } from "@/lib/verification-tokens";
 export const metadata: Metadata = { title: "Sign in · Devstash" };
 
 export default async function SignInPage({ searchParams }: PageProps<"/sign-in">) {
-  const { callbackUrl, error, registered, verified, reset } = await searchParams;
+  const { callbackUrl, error, registered, verified, reset, deleted } = await searchParams;
   const safeCallbackUrl = getSafeCallbackUrl(callbackUrl);
   const errorMessage = getAuthErrorMessage(error);
 
@@ -42,7 +42,10 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
         {reset === "1" && (
           <FormMessage variant="success">Password updated. Sign in with your new password.</FormMessage>
         )}
-        {errorMessage && <FormMessage variant="error">{errorMessage}</FormMessage>}
+        {deleted === "1" && (
+          <FormMessage variant="success">Your account has been deleted.</FormMessage>
+        )}
+        {errorMessage &&<FormMessage variant="error">{errorMessage}</FormMessage>}
         <GitHubSignInButton callbackUrl={safeCallbackUrl} />
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="h-px flex-1 bg-border" />

@@ -1,12 +1,24 @@
-# Current Feature
+# Current Feature: Profile Page
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
+- Profile page at `/profile`, protected (requires authentication)
+- Show user info: email, name, avatar (GitHub image or initials from name/email) and account creation date
+- Show usage stats: total items, total collections and a per-type breakdown (snippets, prompts, notes, commands, links, files, images)
+- Change password action, shown only for users who signed up with email/password (not GitHub OAuth)
+- Delete account action with a confirmation dialog to prevent accidental deletion
+- Follow existing codebase patterns for data fetching and components
+
 ## Notes
+
+- Reuse the existing `UserAvatar` component (GitHub image or initials).
+- The sidebar `UserMenu` already links to `/profile`.
+- The proxy matcher currently only covers `/dashboard/:path*`, so `/profile` needs protecting too.
+- "Email user" means the account has a `password` set.
 
 ## History
 
