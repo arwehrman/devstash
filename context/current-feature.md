@@ -1,35 +1,12 @@
-# Current Feature: Auth Phase 3 - Sign In, Register & Sign Out UI
+# Current Feature
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- Replace the NextAuth default pages with custom UI
-- Sign in page at `/sign-in`: email and password fields, a "Sign in with GitHub" button, a link to the register page, form validation and error display
-- Register page at `/register`: name, email, password and confirm password fields, validation (passwords match, email format), submits to `/api/auth/register`, redirects to sign-in on success
-- Bottom of the sidebar shows the signed-in user's avatar (GitHub image or initials fallback) and name
-- Clicking the avatar opens a dropdown (or drop-up) with a "Sign out" link
-- Clicking the icon goes to `/profile`
-- A reusable avatar component handles both the image and the initials cases
-
 ## Notes
-
-- Avatar logic: use `image` if the user has one (GitHub), otherwise initials from the name (e.g. "Brad Traversy" → "BT").
-- Showing the signed-in user means the sidebar reads from the session instead of `getDemoUser`.
-- Decisions (agreed at start):
-  - Clicking the avatar opens a menu with "Profile" (links to `/profile`) and "Sign out".
-  - The avatar goes at the bottom of the sidebar only, not the top bar.
-  - `/profile` is linked but not built in this feature.
-- Testing:
-  1. Go to `/sign-in` and check the custom page renders
-  2. Sign in with GitHub and check the flow works
-  3. Sign in with email/password and check the flow works
-  4. Check the avatar shows (GitHub image or initials)
-  5. Click the avatar and check the dropdown appears
-  6. Click "Sign out" and check you're signed out and redirected
-  7. Go to `/register`, create an account and check the redirect to sign-in
 
 ## History
 
@@ -45,3 +22,4 @@ In Progress
 - 2026-11-21: Code scan quick wins completed. Low-risk fixes from the code-scanner audit. `findCollections` in `src/lib/db/collections.ts` now uses one SQL aggregate for per-collection type counts instead of loading every item (same returned shape, ties broken by type name), and sidebar favorites are capped at 20. Added `Item(userId, createdAt)` and `Collection(userId, updatedAt)` indexes (`add_sort_indexes` migration), wrapped `getDemoUser` in `React.cache`, and made `src/lib/prisma.ts` throw when `DATABASE_URL` is missing. Dropped the `ItemRow` icon change because it fails the `react-hooks/static-components` lint rule. Auth-related findings and larger refactors (splitting `DashboardPage`/`Sidebar`, inline color styles, the system-type unique index) are deferred. Also added the `code-scanner` Claude agent.
 - 2026-11-21: Auth Phase 1 completed. Installed `next-auth@5.0.0-beta.32` and `@auth/prisma-adapter`. Split config: `src/auth.config.ts` (edge-safe, GitHub provider plus a session callback that sets `session.user.id` from `token.sub`) and `src/auth.ts` (Prisma adapter reusing `src/lib/prisma.ts`, JWT sessions). Added `/api/auth/[...nextauth]` handlers, `src/proxy.ts` (named `proxy` export, matcher `/dashboard/:path*`, redirects to the default sign-in page with a `callbackUrl`) and `src/types/next-auth.d.ts`. Verified the GitHub sign-in round trip and the new User/Account rows on the development branch. The dashboard still uses `getDemoUser`.
 - 2026-11-22: Auth Phase 2 completed. Added email/password sign-in with the Credentials provider in the split pattern: a placeholder `authorize: () => null` in edge-safe `src/auth.config.ts`, replaced in `src/auth.ts` with a bcrypt check (OAuth-only users without a password are rejected). Added `POST /api/auth/register` (Zod validation, passwords must match, 409 for an existing email including concurrent requests via `P2002`, bcrypt hashing with 12 rounds, `{ success, data, error }` responses) and Zod schemas in `src/lib/validations/auth.ts` (emails trimmed and lowercased, passwords 8 characters to 72 UTF-8 bytes). No migration needed, since `User.password` already existed. Installed `zod` and ignored `.playwright-mcp`. Verified registration with curl, email/password sign-in to `/dashboard` with the user id in the session, and the GitHub redirect. The dashboard still uses `getDemoUser`.
+- 2026-11-22: Auth Phase 3 completed. Replaced the NextAuth default pages with custom UI in an `(auth)` route group that sends signed-in users to `/dashboard`. `/sign-in` has a GitHub button, an email/password form (server actions in `src/actions/auth.ts`, email kept after a failed attempt), Auth.js error messages and an "Account created" notice. `/register` validates in the browser with the shared Zod schema, posts to `/api/auth/register` and redirects to sign-in. NextAuth `pages.signIn`/`pages.error` and the proxy point to `/sign-in`, with `callbackUrl` limited to same-site paths (`src/lib/auth-redirect.ts`). Added a reusable decorative `UserAvatar` (GitHub image or initials) and a sidebar `UserMenu` drop-up with Profile (`/profile`, not built yet) and Sign out; the sidebar user now comes from the session. Added shadcn card, label and dropdown-menu (with a `DropdownMenuLinkItem` wrapper). Item types, collections and the main dashboard still use `getDemoUser`. Also committed `devIndicators: false` in `next.config.ts`.
