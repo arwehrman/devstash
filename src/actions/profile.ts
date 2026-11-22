@@ -2,7 +2,6 @@
 
 import { auth, signOut } from "@/auth";
 import { SIGN_IN_PATH } from "@/lib/auth-redirect";
-import { DEMO_USER_EMAIL } from "@/lib/db/users";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { CHANGE_PASSWORD_SCHEMA } from "@/lib/validations/auth";
@@ -70,10 +69,6 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
   try {
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
     if (!user) return { success: false, data: null, error: SIGNED_OUT_ERROR };
-    // The dashboard still reads the demo user's data, so deleting it would empty it for everyone.
-    if (user.email === DEMO_USER_EMAIL) {
-      return { success: false, data: null, error: "The demo account can't be deleted." };
-    }
 
     await prisma.$transaction([
       // Verification and reset tokens aren't linked to the user, so the cascade doesn't remove them.

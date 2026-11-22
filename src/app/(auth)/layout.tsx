@@ -1,13 +1,15 @@
 import { Layers } from "lucide-react";
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
 import { DEFAULT_REDIRECT } from "@/lib/auth-redirect";
+import { getCurrentUser } from "@/lib/db/users";
 
 export default async function AuthLayout({ children }: LayoutProps<"/">) {
-  // Signed-in users have no reason to see the sign-in or register forms.
-  const session = await auth();
-  if (session?.user) redirect(DEFAULT_REDIRECT);
+  // Signed-in users have no reason to see the sign-in or register forms. This checks the
+  // account exists, not just the session, so a session for a deleted account doesn't
+  // bounce between here and the dashboard forever.
+  const user = await getCurrentUser();
+  if (user) redirect(DEFAULT_REDIRECT);
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 px-4 py-12">

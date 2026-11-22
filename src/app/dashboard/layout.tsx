@@ -1,23 +1,21 @@
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 
-import { auth } from "@/auth";
-import { SIGN_IN_PATH } from "@/lib/auth-redirect";
-
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { SIGN_IN_PATH } from "@/lib/auth-redirect";
 import { getSidebarData } from "@/lib/db/sidebar";
+import { getCurrentUser } from "@/lib/db/users";
 
 export default async function DashboardLayout({
   children,
 }: LayoutProps<"/dashboard">) {
   await connection();
 
-  // The proxy already guards /dashboard; this also covers a session that expired mid-request.
-  const session = await auth();
-  if (!session?.user?.email) redirect(SIGN_IN_PATH);
+  // The proxy already guards /dashboard; this also covers an expired session or a deleted account.
+  const user = await getCurrentUser();
+  if (!user) redirect(SIGN_IN_PATH);
 
-  const { name, email, image } = session.user;
-  const sidebar = await getSidebarData({ name: name ?? null, email, image: image ?? null });
+  const sidebar = await getSidebarData(user);
 
   return <DashboardShell sidebar={sidebar}>{children}</DashboardShell>;
 }

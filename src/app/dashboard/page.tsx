@@ -1,13 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Clock, Folder, FolderHeart, Layers, Pin, Star } from "lucide-react";
 
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
+import { EmptyState } from "@/components/dashboard/EmptyState";
 import { ItemRow } from "@/components/dashboard/ItemRow";
 import { StatsCards } from "@/components/dashboard/StatsCards";
+import { SIGN_IN_PATH } from "@/lib/auth-redirect";
 import { getCollectionStats, getRecentCollections } from "@/lib/db/collections";
 import { getItemStats, getPinnedItems, getRecentItems } from "@/lib/db/items";
-import { getDemoUser } from "@/lib/db/users";
+import { getCurrentUser } from "@/lib/db/users";
 
 const RECENT_COLLECTIONS_LIMIT = 6;
 const RECENT_ITEMS_LIMIT = 10;
@@ -15,23 +18,18 @@ const RECENT_ITEMS_LIMIT = 10;
 export default async function DashboardPage() {
   await connection();
 
-  const user = await getDemoUser();
+  // Pages render alongside their layout, so the page checks the user too.
+  const user = await getCurrentUser();
+  if (!user) redirect(SIGN_IN_PATH);
+
   const [recentCollections, collectionStats, pinnedItems, recentItems, itemStats] =
-    user
-      ? await Promise.all([
-          getRecentCollections(user.id, RECENT_COLLECTIONS_LIMIT),
-          getCollectionStats(user.id),
-          getPinnedItems(user.id),
-          getRecentItems(user.id, RECENT_ITEMS_LIMIT),
-          getItemStats(user.id),
-        ])
-      : ([
-          [],
-          { total: 0, favorites: 0 },
-          [],
-          [],
-          { total: 0, favorites: 0 },
-        ] as const);
+    await Promise.all([
+      getRecentCollections(user.id, RECENT_COLLECTIONS_LIMIT),
+      getCollectionStats(user.id),
+      getPinnedItems(user.id),
+      getRecentItems(user.id, RECENT_ITEMS_LIMIT),
+      getItemStats(user.id),
+    ]);
 
   const stats = [
     { label: "Items", value: itemStats.total, icon: Layers },
@@ -63,11 +61,18 @@ export default async function DashboardPage() {
             View all
           </Link>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {recentCollections.map((collection) => (
-            <CollectionCard key={collection.id} collection={collection} />
-          ))}
-        </div>
+        {recentCollections.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {recentCollections.map((collection) => (
+              <CollectionCard key={collection.id} collection={collection} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No collections yet"
+            description="Collections group related items, like React Patterns or Interview Prep."
+          />
+        )}
       </section>
 
       {pinnedItems.length > 0 && (
@@ -89,11 +94,18 @@ export default async function DashboardPage() {
           <Clock className="size-4" />
           Recent Items
         </h2>
-        <div className="flex flex-col gap-3">
-          {recentItems.map((item) => (
-            <ItemRow key={item.id} item={item} />
-          ))}
-        </div>
+        {recentItems.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {recentItems.map((item) => (
+              <ItemRow key={item.id} item={item} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="No items yet"
+            description="Save snippets, prompts, commands, notes and links to see them here."
+          />
+        )}
       </section>
     </div>
   );

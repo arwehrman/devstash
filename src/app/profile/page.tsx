@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
 import { ChangePasswordDialog } from "@/components/profile/ChangePasswordDialog";
 import { DeleteAccountDialog } from "@/components/profile/DeleteAccountDialog";
 import { UsageStats } from "@/components/profile/UsageStats";
@@ -10,23 +9,20 @@ import { SIGN_IN_PATH } from "@/lib/auth-redirect";
 import { formatLongDate } from "@/lib/dashboard";
 import { getCollectionStats } from "@/lib/db/collections";
 import { getItemStats, getSystemItemTypes } from "@/lib/db/items";
-import { getProfileUser } from "@/lib/db/users";
+import { getCurrentUser } from "@/lib/db/users";
 
 export const metadata: Metadata = { title: "Profile · Devstash" };
 
 export default async function ProfilePage() {
-  const session = await auth();
-  const userId = session?.user?.id;
-  if (!userId) redirect(SIGN_IN_PATH);
-
-  const [user, itemStats, collectionStats, itemTypes] = await Promise.all([
-    getProfileUser(userId),
-    getItemStats(userId),
-    getCollectionStats(userId),
-    getSystemItemTypes(userId),
-  ]);
-  // The session can outlive the account, e.g. after it was deleted on another device.
+  // Pages render alongside their layout, so the page checks the user too.
+  const user = await getCurrentUser();
   if (!user) redirect(SIGN_IN_PATH);
+
+  const [itemStats, collectionStats, itemTypes] = await Promise.all([
+    getItemStats(user.id),
+    getCollectionStats(user.id),
+    getSystemItemTypes(user.id),
+  ]);
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8">

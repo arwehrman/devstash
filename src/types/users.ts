@@ -4,7 +4,7 @@ export interface SidebarUser {
   image: string | null;
 }
 
-export interface ProfileUser extends SidebarUser {
+export interface CurrentUser extends SidebarUser {
   id: string;
   createdAt: Date;
   // False for OAuth-only accounts, which can't change a password.
