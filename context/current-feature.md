@@ -1,29 +1,12 @@
-# Current Feature: Email Verification Toggle
+# Current Feature
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- Add an `EMAIL_VERIFICATION_ENABLED` env var that turns the email verification system on or off. Verification stays **on** when the var is unset, and only the exact value `false` turns it off, so production can't lose verification by accident.
-- Add one helper, `isEmailVerificationEnabled()`, that every check uses instead of reading `process.env` directly.
-- When verification is **off**:
-  - `POST /api/auth/register` creates the user with `emailVerified` set to the current time and skips the token and the Resend email, so any email address can register.
-  - Credentials sign-in skips the "verify your email first" check, so accounts created earlier while verification was on can sign in too.
-  - The register response tells the client whether verification is needed. The sign-in notice then says "Account created. You can sign in now." instead of asking the user to check their email.
-- When verification is **on**, everything works as it does now.
-- Document the var in `.env.example` (if it exists) and set `EMAIL_VERIFICATION_ENABLED=false` in the local `.env` for now.
-
 ## Notes
-
-- Why: no domain is linked to Resend yet, so it only delivers to the Resend account's own address, and nobody else can register.
-- Why an env var: it can be changed per environment (local, Vercel preview, production) without a code change, and it fits the existing `APP_URL`, `EMAIL_FROM` and `RESEND_API_KEY` setup. A database or admin setting would be overkill at this stage.
-- Accounts created while verification is off are marked verified, so turning it back on later won't lock them out.
-- `/verify-email` keeps working when verification is off, so a link sent earlier can still be used.
-- Files involved: `src/app/api/auth/register/route.ts`, `src/auth.ts`, `src/app/(auth)/sign-in/page.tsx`, the register form's redirect, and a new helper (for example in `src/lib/verification-tokens.ts`).
-- No migration needed.
-- When verification is on, the re-register logic for never-verified accounts stays the same.
 
 ## History
 
@@ -41,3 +24,4 @@ In Progress
 - 2026-11-22: Auth Phase 2 completed. Added email/password sign-in with the Credentials provider in the split pattern: a placeholder `authorize: () => null` in edge-safe `src/auth.config.ts`, replaced in `src/auth.ts` with a bcrypt check (OAuth-only users without a password are rejected). Added `POST /api/auth/register` (Zod validation, passwords must match, 409 for an existing email including concurrent requests via `P2002`, bcrypt hashing with 12 rounds, `{ success, data, error }` responses) and Zod schemas in `src/lib/validations/auth.ts` (emails trimmed and lowercased, passwords 8 characters to 72 UTF-8 bytes). No migration needed, since `User.password` already existed. Installed `zod` and ignored `.playwright-mcp`. Verified registration with curl, email/password sign-in to `/dashboard` with the user id in the session, and the GitHub redirect. The dashboard still uses `getDemoUser`.
 - 2026-11-22: Auth Phase 3 completed. Replaced the NextAuth default pages with custom UI in an `(auth)` route group that sends signed-in users to `/dashboard`. `/sign-in` has a GitHub button, an email/password form (server actions in `src/actions/auth.ts`, email kept after a failed attempt), Auth.js error messages and an "Account created" notice. `/register` validates in the browser with the shared Zod schema, posts to `/api/auth/register` and redirects to sign-in. NextAuth `pages.signIn`/`pages.error` and the proxy point to `/sign-in`, with `callbackUrl` limited to same-site paths (`src/lib/auth-redirect.ts`). Added a reusable decorative `UserAvatar` (GitHub image or initials) and a sidebar `UserMenu` drop-up with Profile (`/profile`, not built yet) and Sign out; the sidebar user now comes from the session. Added shadcn card, label and dropdown-menu (with a `DropdownMenuLinkItem` wrapper). Item types, collections and the main dashboard still use `getDemoUser`. Also committed `devIndicators: false` in `next.config.ts`.
 - 2026-11-22: Email verification on register completed. Installed `resend` and added `src/lib/email.ts` (`sendVerificationEmail`, sender from `EMAIL_FROM`, defaulting to `onboarding@resend.dev`). Registration creates a 24-hour token in the existing `VerificationToken` table (`src/lib/verification-tokens.ts`; only a SHA-256 hash is stored) and emails a link built from the new `APP_URL` env var. If sending fails, the new user is deleted and a friendly error is returned. `/verify-email` (route handler) sets `emailVerified`, deletes the token and redirects to `/sign-in` with a "verified" notice or an invalid/expired message. Credentials sign-in throws an `EmailNotVerifiedError` (`CredentialsSignin` with code `email_not_verified`) after the password check, shown on the form as "verify your email first". Registering again replaces a never-verified account only when it has no unexpired link, which prevents takeover of a pending sign-up and limits repeat emails. No migration needed. Also added `scripts/delete-non-demo-users.ts` and `npm run db:cleanup-users` (dry run by default, `-- --confirm` to delete; aborts if the demo user is missing). `APP_URL` still needs to be set in production, and a verified Resend domain is needed to email real users.
+- 2026-11-22: Email verification toggle completed. Added an `EMAIL_VERIFICATION_ENABLED` env var, read through `isEmailVerificationEnabled()` in `src/lib/verification-tokens.ts`. Verification stays on unless the value is exactly `false`. When it's off, registration sets `emailVerified` right away and skips the token and the Resend email, credentials sign-in skips the unverified check, registering again with an existing unverified email returns "email taken" (those accounts can sign in, so replacing one would allow a takeover), and the sign-in "Account created" notice says "You can sign in now". The sign-in page reads the flag on the server, so the register response wasn't changed. Set `EMAIL_VERIFICATION_ENABLED=false` in the local `.env` (there's no `.env.example`). It also needs to be set on Vercel to turn verification off there. Verified registering and signing in with a non-Resend address while the flag is off.
