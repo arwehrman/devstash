@@ -2,6 +2,8 @@ import GitHub from "next-auth/providers/github";
 import Credentials from "next-auth/providers/credentials";
 import type { NextAuthConfig } from "next-auth";
 
+import { SIGN_IN_PATH } from "@/lib/auth-redirect";
+
 export const CREDENTIALS_FIELDS = {
   email: { label: "Email", type: "email" },
   password: { label: "Password", type: "password" },
@@ -17,6 +19,8 @@ export default {
       authorize: () => null,
     }),
   ],
+  // Custom pages; Auth.js sends sign-in and other errors here as ?error=<type>.
+  pages: { signIn: SIGN_IN_PATH, error: SIGN_IN_PATH },
   callbacks: {
     session({ session, token }) {
       if (token.sub) session.user.id = token.sub;

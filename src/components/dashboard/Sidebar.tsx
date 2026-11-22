@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Folder, Layers, Settings, Star } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserMenu } from "@/components/dashboard/UserMenu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getItemTypeIcon } from "@/lib/item-type-icons";
@@ -85,15 +85,6 @@ function SubHeading({ children }: { children: React.ReactNode }) {
 
 function formatTypeName(name: string) {
   return `${name.charAt(0).toUpperCase()}${name.slice(1)}s`;
-}
-
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 }
 
 export function Sidebar({ data, onNavigate }: SidebarProps) {
@@ -192,23 +183,8 @@ export function Sidebar({ data, onNavigate }: SidebarProps) {
         </SidebarSection>
       </nav>
 
-      <div className="flex shrink-0 items-center gap-3 border-t p-3">
-        {user && (
-          <>
-            <Avatar>
-              {user.image && <AvatarImage src={user.image} alt="" />}
-              <AvatarFallback>{getInitials(user.name ?? user.email)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">
-                {user.name ?? user.email}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {user.email}
-              </p>
-            </div>
-          </>
-        )}
+      <div className="flex shrink-0 items-center gap-2 border-t p-2">
+        {user && <UserMenu user={user} onNavigate={onNavigate} />}
         <Button
           variant="ghost"
           size="icon-sm"
