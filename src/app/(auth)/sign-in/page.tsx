@@ -17,7 +17,7 @@ import { getAuthErrorMessage, getSafeCallbackUrl } from "@/lib/auth-redirect";
 export const metadata: Metadata = { title: "Sign in · Devstash" };
 
 export default async function SignInPage({ searchParams }: PageProps<"/sign-in">) {
-  const { callbackUrl, error, registered } = await searchParams;
+  const { callbackUrl, error, registered, verified } = await searchParams;
   const safeCallbackUrl = getSafeCallbackUrl(callbackUrl);
   const errorMessage = getAuthErrorMessage(error);
 
@@ -29,7 +29,12 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {registered === "1" && (
-          <FormMessage variant="success">Account created. You can sign in now.</FormMessage>
+          <FormMessage variant="success">
+            Account created. Check your email for a link to verify your address, then sign in.
+          </FormMessage>
+        )}
+        {verified === "1" && (
+          <FormMessage variant="success">Email verified. You can sign in now.</FormMessage>
         )}
         {errorMessage && <FormMessage variant="error">{errorMessage}</FormMessage>}
         <GitHubSignInButton callbackUrl={safeCallbackUrl} />

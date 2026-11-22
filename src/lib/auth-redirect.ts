@@ -14,6 +14,8 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   OAuthAccountNotLinked:
     "An account with this email already exists. Sign in with your email and password.",
   AccessDenied: "Access was denied. Please try again.",
+  VerificationInvalid: "This verification link is invalid or has already been used.",
+  VerificationExpired: "This verification link has expired. Please register again.",
 };
 
 export function getAuthErrorMessage(error: unknown): string | null {

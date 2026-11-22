@@ -1,14 +1,24 @@
 "use server";
 
-import { AuthError } from "next-auth";
+import { AuthError, CredentialsSignin } from "next-auth";
 
 import { signIn, signOut } from "@/auth";
+import { EMAIL_NOT_VERIFIED_CODE } from "@/auth.config";
 import { getSafeCallbackUrl, SIGN_IN_PATH } from "@/lib/auth-redirect";
 import { SIGN_IN_SCHEMA } from "@/lib/validations/auth";
 import type { ActionResult } from "@/types/actions";
 
 // data.email lets the form refill the email after React resets it on a failed attempt.
 export type SignInResult = ActionResult<{ email: string }>;
+
+function getCredentialsErrorMessage(error: AuthError): string {
+  if (error instanceof CredentialsSignin) {
+    return error.code === EMAIL_NOT_VERIFIED_CODE
+      ? "Please verify your email first. Check your inbox for the verification link."
+      : "Invalid email or password";
+  }
+  return "Something went wrong. Please try again.";
+}
 
 export async function signInWithCredentials(
   _prevState: SignInResult,
@@ -32,11 +42,7 @@ export async function signInWithCredentials(
   } catch (error) {
     // Anything that isn't an AuthError (including Next's redirect) must be rethrown.
     if (!(error instanceof AuthError)) throw error;
-    const message =
-      error.type === "CredentialsSignin"
-        ? "Invalid email or password"
-        : "Something went wrong. Please try again.";
-    return { success: false, data, error: message };
+    return { success: false, data, error: getCredentialsErrorMessage(error) };
   }
 }
 

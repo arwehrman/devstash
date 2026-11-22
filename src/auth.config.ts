@@ -9,6 +9,9 @@ export const CREDENTIALS_FIELDS = {
   password: { label: "Password", type: "password" },
 };
 
+// CredentialsSignin code for a correct password on an unverified email.
+export const EMAIL_NOT_VERIFIED_CODE = "email_not_verified";
+
 // Edge-safe config: no adapter or database access, so the proxy can use it.
 // The Credentials provider is a placeholder; src/auth.ts replaces it with the real one.
 export default {

@@ -1,12 +1,28 @@
-# Current Feature
+# Current Feature: Email Verification on Register
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
+- Install `resend` and add a small email helper in `src/lib/` that reads `RESEND_API_KEY` from `.env`
+- On registration (`POST /api/auth/register`), create a verification token (stored in the existing `VerificationToken` model, with an expiry such as 24 hours) and send a verification email through Resend with a link to click
+- Add a verification route (e.g. `/verify-email?token=...`) that checks the token, sets `User.emailVerified`, deletes the token and redirects to `/sign-in` with a "verified" notice
+- Show clear messages for invalid or expired links
+- Block email/password sign-in until the email is verified, with a sign-in error message telling the user to check their email
+- After registering, show a "check your email" notice instead of "Account created"
+- GitHub OAuth users are not affected
+
 ## Notes
+
+- `RESEND_API_KEY` is already in `.env`. No sender address or app URL env vars exist yet: likely need `EMAIL_FROM` (e.g. `onboarding@resend.dev` until a domain is verified in Resend) and a base URL for the link (e.g. `AUTH_URL` or `APP_URL`, `http://localhost:3000` in dev)
+- Resend's test sender (`onboarding@resend.dev`) only delivers to the Resend account owner's email until a domain is verified
+- `VerificationToken` (`identifier`, `token`, `expires`) already exists from the Auth.js schema, so no migration should be needed
+- Store a hashed token in the database and send the raw token in the link
+- If sending the email fails, the user is still created; decide whether to surface an error or allow resending (a "resend verification email" option is a possible follow-up, not in scope unless needed)
+- The seeded demo user (`demo@devstash.io`) and existing credential users have `emailVerified` null; the seed should set `emailVerified` for the demo user so it can still sign in
+- Credentials errors in Auth.js v5 need a custom `CredentialsSignin` subclass (with a `code`) to show a specific "email not verified" message on `/sign-in`
 
 ## History
 
