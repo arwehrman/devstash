@@ -1,31 +1,12 @@
-# Current Feature: Forgot Password
+# Current Feature
 
 ## Status
 
-In Progress
+Completed
 
 ## Goals
 
-- "Forgot password?" link on the `/sign-in` form, next to the password field
-- `/forgot-password` page (in the `(auth)` route group) with an email form that requests a reset link
-- Always show the same "If an account exists, we've sent a reset link" message, whether or not the email exists, so the form can't be used to find out which emails have accounts
-- Only send a reset email to users who have a password (OAuth-only users get no email)
-- Reset tokens are stored in the existing `VerificationToken` model: random token, only the SHA-256 hash stored, 1-hour expiry, any earlier reset token for that user replaced
-- `sendPasswordResetEmail` in `src/lib/email.ts` (Resend), with a link to `/reset-password?token=...` built from `APP_URL`
-- `/reset-password` page with new password and confirm fields, validated with a shared Zod schema (same rules as registration: 8 characters to 72 UTF-8 bytes, passwords must match)
-- On submit: check the token, hash the new password with bcrypt (12 rounds), update the user and delete the token in one transaction, then redirect to `/sign-in` with a "Password updated" notice
-- Clear invalid and expired link messages, with a way to request a new link
-- Server actions in `src/actions/auth.ts` returning `{ success, data, error }`
-
 ## Notes
-
-- `VerificationToken` has no type column, and email verification uses the plain email as `identifier`. Reset tokens use a prefixed identifier (e.g. `password-reset:<email>`) so they don't replace or get replaced by verification tokens. No migration needed.
-- `verifyEmailToken` looks tokens up by hash only, so it must reject tokens with the reset prefix. Otherwise a reset link pasted into `/verify-email` would verify the email. The reset lookup must likewise only accept reset-prefixed tokens.
-- Reuse the hashing helper in `src/lib/verification-tokens.ts` instead of duplicating it.
-- Resetting the password also sets `emailVerified` if it's empty, since the user proved they own the email. (Confirm during review.)
-- Existing JWT sessions stay valid after a reset, since sessions aren't stored in the database. Out of scope for now.
-- No rate limiting yet; replacing the previous token keeps only one valid link per user.
-- Works the same whether `EMAIL_VERIFICATION_ENABLED` is on or off.
 
 ## History
 
@@ -44,3 +25,4 @@ In Progress
 - 2026-11-22: Auth Phase 3 completed. Replaced the NextAuth default pages with custom UI in an `(auth)` route group that sends signed-in users to `/dashboard`. `/sign-in` has a GitHub button, an email/password form (server actions in `src/actions/auth.ts`, email kept after a failed attempt), Auth.js error messages and an "Account created" notice. `/register` validates in the browser with the shared Zod schema, posts to `/api/auth/register` and redirects to sign-in. NextAuth `pages.signIn`/`pages.error` and the proxy point to `/sign-in`, with `callbackUrl` limited to same-site paths (`src/lib/auth-redirect.ts`). Added a reusable decorative `UserAvatar` (GitHub image or initials) and a sidebar `UserMenu` drop-up with Profile (`/profile`, not built yet) and Sign out; the sidebar user now comes from the session. Added shadcn card, label and dropdown-menu (with a `DropdownMenuLinkItem` wrapper). Item types, collections and the main dashboard still use `getDemoUser`. Also committed `devIndicators: false` in `next.config.ts`.
 - 2026-11-22: Email verification on register completed. Installed `resend` and added `src/lib/email.ts` (`sendVerificationEmail`, sender from `EMAIL_FROM`, defaulting to `onboarding@resend.dev`). Registration creates a 24-hour token in the existing `VerificationToken` table (`src/lib/verification-tokens.ts`; only a SHA-256 hash is stored) and emails a link built from the new `APP_URL` env var. If sending fails, the new user is deleted and a friendly error is returned. `/verify-email` (route handler) sets `emailVerified`, deletes the token and redirects to `/sign-in` with a "verified" notice or an invalid/expired message. Credentials sign-in throws an `EmailNotVerifiedError` (`CredentialsSignin` with code `email_not_verified`) after the password check, shown on the form as "verify your email first". Registering again replaces a never-verified account only when it has no unexpired link, which prevents takeover of a pending sign-up and limits repeat emails. No migration needed. Also added `scripts/delete-non-demo-users.ts` and `npm run db:cleanup-users` (dry run by default, `-- --confirm` to delete; aborts if the demo user is missing). `APP_URL` still needs to be set in production, and a verified Resend domain is needed to email real users.
 - 2026-11-22: Email verification toggle completed. Added an `EMAIL_VERIFICATION_ENABLED` env var, read through `isEmailVerificationEnabled()` in `src/lib/verification-tokens.ts`. Verification stays on unless the value is exactly `false`. When it's off, registration sets `emailVerified` right away and skips the token and the Resend email, credentials sign-in skips the unverified check, registering again with an existing unverified email returns "email taken" (those accounts can sign in, so replacing one would allow a takeover), and the sign-in "Account created" notice says "You can sign in now". The sign-in page reads the flag on the server, so the register response wasn't changed. Set `EMAIL_VERIFICATION_ENABLED=false` in the local `.env` (there's no `.env.example`). It also needs to be set on Vercel to turn verification off there. Verified registering and signing in with a non-Resend address while the flag is off.
+- 2026-11-22: Forgot password completed. Added a "Forgot password?" link next to the sign-in password field (through a new `labelAction` prop on `FormField`), `/forgot-password` and `/reset-password` pages in the `(auth)` group, and `requestPasswordReset`/`resetPassword` server actions in `src/actions/auth.ts`. Reset tokens reuse the `VerificationToken` table under a `password-reset:<email>` identifier (`src/lib/password-reset-tokens.ts`): only a SHA-256 hash is stored, they last 1 hour, and a new request replaces the old link. The forgot form always shows the same message, only accounts with a password get an email (`sendPasswordResetEmail` in `src/lib/email.ts`), and send failures are logged rather than shown. The reset page checks the link before showing the form, and if it's invalid, used or expired (including when it expires while the form is open) shows a message with a "Request a new link" button. Resetting deletes the token first inside one transaction, so a link works only once, then updates the password, sets `emailVerified` if empty, and redirects to `/sign-in?reset=1`. `verifyEmailToken` now rejects reset tokens. Shared pieces: `createToken`/`getTokenUrl`/`hashToken` in `src/lib/verification-tokens.ts`, a `newPassword` Zod rule used by both register and reset, and `hashPassword` in `src/lib/password.ts` (also used by the register route). The reset page sends no referrer. No migration needed. Not done yet: existing sessions stay signed in after a reset, there's no rate limiting, and the response is slower for real accounts because it waits on Resend.
