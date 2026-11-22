@@ -31,3 +31,21 @@ export async function sendVerificationEmail(
   })
   if (error) throw new Error(`Resend failed: ${error.message}`)
 }
+
+export async function sendPasswordResetEmail(
+  to: string,
+  resetUrl: string
+): Promise<void> {
+  const { error } = await getResend().emails.send({
+    from: process.env.EMAIL_FROM ?? DEFAULT_FROM,
+    to,
+    subject: 'Reset your DevStash password',
+    text: `Someone asked to reset the password for your DevStash account. Choose a new password by opening this link:\n\n${resetUrl}\n\nThe link expires in 1 hour. If you didn't ask for this, you can ignore this email and your password won't change.`,
+    html: `
+      <p>Someone asked to reset the password for your DevStash account.</p>
+      <p><a href="${resetUrl}">Choose a new password</a></p>
+      <p>The link expires in 1 hour. If you didn't ask for this, you can ignore this email and your password won't change.</p>
+    `
+  })
+  if (error) throw new Error(`Resend failed: ${error.message}`)
+}

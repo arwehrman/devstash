@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { Prisma } from "@/generated/prisma/client";
 import { sendVerificationEmail } from "@/lib/email";
+import { hashPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 import { REGISTER_SCHEMA } from "@/lib/validations/auth";
 import {
@@ -10,8 +10,6 @@ import {
   hasPendingVerification,
   isEmailVerificationEnabled,
 } from "@/lib/verification-tokens";
-
-const BCRYPT_ROUNDS = 12;
 
 const EMAIL_TAKEN = "An account with this email already exists";
 const VERIFICATION_PENDING =
@@ -61,7 +59,7 @@ export async function POST(request: Request) {
       data: {
         name,
         email,
-        password: await bcrypt.hash(password, BCRYPT_ROUNDS),
+        password: await hashPassword(password),
         emailVerified: verificationEnabled ? null : new Date(),
       },
       select: { id: true, name: true, email: true },

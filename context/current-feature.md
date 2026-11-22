@@ -1,12 +1,31 @@
-# Current Feature
+# Current Feature: Forgot Password
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
+- "Forgot password?" link on the `/sign-in` form, next to the password field
+- `/forgot-password` page (in the `(auth)` route group) with an email form that requests a reset link
+- Always show the same "If an account exists, we've sent a reset link" message, whether or not the email exists, so the form can't be used to find out which emails have accounts
+- Only send a reset email to users who have a password (OAuth-only users get no email)
+- Reset tokens are stored in the existing `VerificationToken` model: random token, only the SHA-256 hash stored, 1-hour expiry, any earlier reset token for that user replaced
+- `sendPasswordResetEmail` in `src/lib/email.ts` (Resend), with a link to `/reset-password?token=...` built from `APP_URL`
+- `/reset-password` page with new password and confirm fields, validated with a shared Zod schema (same rules as registration: 8 characters to 72 UTF-8 bytes, passwords must match)
+- On submit: check the token, hash the new password with bcrypt (12 rounds), update the user and delete the token in one transaction, then redirect to `/sign-in` with a "Password updated" notice
+- Clear invalid and expired link messages, with a way to request a new link
+- Server actions in `src/actions/auth.ts` returning `{ success, data, error }`
+
 ## Notes
+
+- `VerificationToken` has no type column, and email verification uses the plain email as `identifier`. Reset tokens use a prefixed identifier (e.g. `password-reset:<email>`) so they don't replace or get replaced by verification tokens. No migration needed.
+- `verifyEmailToken` looks tokens up by hash only, so it must reject tokens with the reset prefix. Otherwise a reset link pasted into `/verify-email` would verify the email. The reset lookup must likewise only accept reset-prefixed tokens.
+- Reuse the hashing helper in `src/lib/verification-tokens.ts` instead of duplicating it.
+- Resetting the password also sets `emailVerified` if it's empty, since the user proved they own the email. (Confirm during review.)
+- Existing JWT sessions stay valid after a reset, since sessions aren't stored in the database. Out of scope for now.
+- No rate limiting yet; replacing the previous token keeps only one valid link per user.
+- Works the same whether `EMAIL_VERIFICATION_ENABLED` is on or off.
 
 ## History
 
