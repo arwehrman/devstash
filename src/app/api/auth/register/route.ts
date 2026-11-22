@@ -8,6 +8,7 @@ import {
   createVerificationToken,
   getVerifyUrl,
   hasPendingVerification,
+  isEmailVerificationEnabled,
 } from "@/lib/verification-tokens";
 
 const BCRYPT_ROUNDS = 12;
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
   }
 
   const { name, email, password } = parsed.data;
+  const verificationEnabled = isEmailVerificationEnabled();
 
   try {
     const existing = await prisma.user.findUnique({
@@ -43,9 +45,10 @@ export async function POST(request: Request) {
     if (existing) {
       // A never-verified email/password account can't be signed in to, so registering
       // again replaces it once its link has expired or been used. While a link is still
-      // pending, replacing it would let someone else take over the sign-up.
+      // pending, replacing it would let someone else take over the sign-up. With
+      // verification off, unverified accounts can sign in, so they're never replaced.
       const unverified = existing.password && !existing.emailVerified;
-      if (!unverified) return errorResponse(EMAIL_TAKEN, 409);
+      if (!unverified || !verificationEnabled) return errorResponse(EMAIL_TAKEN, 409);
       if (await hasPendingVerification(email)) return errorResponse(VERIFICATION_PENDING, 409);
       await prisma.$transaction([
         prisma.verificationToken.deleteMany({ where: { identifier: email } }),
@@ -53,10 +56,20 @@ export async function POST(request: Request) {
       ]);
     }
 
+    // With verification off, mark the account verified so turning it back on won't lock it out.
     const user = await prisma.user.create({
-      data: { name, email, password: await bcrypt.hash(password, BCRYPT_ROUNDS) },
+      data: {
+        name,
+        email,
+        password: await bcrypt.hash(password, BCRYPT_ROUNDS),
+        emailVerified: verificationEnabled ? null : new Date(),
+      },
       select: { id: true, name: true, email: true },
     });
+
+    if (!verificationEnabled) {
+      return NextResponse.json({ success: true, data: user, error: null }, { status: 201 });
+    }
 
     try {
       const token = await createVerificationToken(user.email);

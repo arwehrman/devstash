@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import authConfig, { CREDENTIALS_FIELDS, EMAIL_NOT_VERIFIED_CODE } from "@/auth.config";
 import { prisma } from "@/lib/prisma";
 import { SIGN_IN_SCHEMA } from "@/lib/validations/auth";
+import { isEmailVerificationEnabled } from "@/lib/verification-tokens";
 
 class EmailNotVerifiedError extends CredentialsSignin {
   code = EMAIL_NOT_VERIFIED_CODE;
@@ -33,7 +34,7 @@ const credentialsProvider = Credentials({
     const valid = await bcrypt.compare(parsed.data.password, user.password);
     if (!valid) return null;
     // Checked after the password, so only the account owner learns it's unverified.
-    if (!user.emailVerified) throw new EmailNotVerifiedError();
+    if (!user.emailVerified && isEmailVerificationEnabled()) throw new EmailNotVerifiedError();
 
     return { id: user.id, name: user.name, email: user.email, image: user.image };
   },

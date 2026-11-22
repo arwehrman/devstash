@@ -1,12 +1,29 @@
-# Current Feature
+# Current Feature: Email Verification Toggle
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
+- Add an `EMAIL_VERIFICATION_ENABLED` env var that turns the email verification system on or off. Verification stays **on** when the var is unset, and only the exact value `false` turns it off, so production can't lose verification by accident.
+- Add one helper, `isEmailVerificationEnabled()`, that every check uses instead of reading `process.env` directly.
+- When verification is **off**:
+  - `POST /api/auth/register` creates the user with `emailVerified` set to the current time and skips the token and the Resend email, so any email address can register.
+  - Credentials sign-in skips the "verify your email first" check, so accounts created earlier while verification was on can sign in too.
+  - The register response tells the client whether verification is needed. The sign-in notice then says "Account created. You can sign in now." instead of asking the user to check their email.
+- When verification is **on**, everything works as it does now.
+- Document the var in `.env.example` (if it exists) and set `EMAIL_VERIFICATION_ENABLED=false` in the local `.env` for now.
+
 ## Notes
+
+- Why: no domain is linked to Resend yet, so it only delivers to the Resend account's own address, and nobody else can register.
+- Why an env var: it can be changed per environment (local, Vercel preview, production) without a code change, and it fits the existing `APP_URL`, `EMAIL_FROM` and `RESEND_API_KEY` setup. A database or admin setting would be overkill at this stage.
+- Accounts created while verification is off are marked verified, so turning it back on later won't lock them out.
+- `/verify-email` keeps working when verification is off, so a link sent earlier can still be used.
+- Files involved: `src/app/api/auth/register/route.ts`, `src/auth.ts`, `src/app/(auth)/sign-in/page.tsx`, the register form's redirect, and a new helper (for example in `src/lib/verification-tokens.ts`).
+- No migration needed.
+- When verification is on, the re-register logic for never-verified accounts stays the same.
 
 ## History
 

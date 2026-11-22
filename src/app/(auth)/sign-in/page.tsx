@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getAuthErrorMessage, getSafeCallbackUrl } from "@/lib/auth-redirect";
+import { isEmailVerificationEnabled } from "@/lib/verification-tokens";
 
 export const metadata: Metadata = { title: "Sign in · Devstash" };
 
@@ -30,7 +31,9 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
       <CardContent className="flex flex-col gap-4">
         {registered === "1" && (
           <FormMessage variant="success">
-            Account created. Check your email for a link to verify your address, then sign in.
+            {isEmailVerificationEnabled()
+              ? "Account created. Check your email for a link to verify your address, then sign in."
+              : "Account created. You can sign in now."}
           </FormMessage>
         )}
         {verified === "1" && (
