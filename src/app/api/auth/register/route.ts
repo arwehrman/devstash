@@ -3,6 +3,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { sendVerificationEmail } from "@/lib/email";
 import { hashPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp, rateLimitResponse } from "@/lib/rate-limit";
 import { REGISTER_SCHEMA } from "@/lib/validations/auth";
 import {
   createVerificationToken,
@@ -20,6 +21,9 @@ function errorResponse(error: string, status: number) {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = await checkRateLimit("register", getClientIp(request.headers));
+  if (!rateLimit.success) return rateLimitResponse(rateLimit.reset);
+
   let body: unknown;
   try {
     body = await request.json();

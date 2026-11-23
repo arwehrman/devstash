@@ -1,10 +1,11 @@
 "use server";
 
 import { AuthError, CredentialsSignin } from "next-auth";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { signIn, signOut } from "@/auth";
-import { EMAIL_NOT_VERIFIED_CODE } from "@/auth.config";
+import { EMAIL_NOT_VERIFIED_CODE, RATE_LIMITED_CODE } from "@/auth.config";
 import { getSafeCallbackUrl, SIGN_IN_PATH } from "@/lib/auth-redirect";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { hashPassword } from "@/lib/password";
@@ -17,6 +18,12 @@ import {
 } from "@/lib/password-reset-tokens";
 import { prisma } from "@/lib/prisma";
 import {
+  checkRateLimit,
+  getClientIp,
+  getRateLimitMessage,
+  type RateLimitName,
+} from "@/lib/rate-limit";
+import {
   FORGOT_PASSWORD_SCHEMA,
   RESET_PASSWORD_SCHEMA,
   SIGN_IN_SCHEMA,
@@ -24,15 +31,25 @@ import {
 import type { ActionResult } from "@/types/actions";
 
 // data.email lets the form refill the email after React resets it on a failed attempt.
-export type SignInResult = ActionResult<{ email: string }>;
+// data.needsVerification tells the form to offer a new verification link.
+export type SignInResult = ActionResult<{ email: string; needsVerification: boolean }>;
 
 function getCredentialsErrorMessage(error: AuthError): string {
   if (error instanceof CredentialsSignin) {
-    return error.code === EMAIL_NOT_VERIFIED_CODE
-      ? "Please verify your email first. Check your inbox for the verification link."
-      : "Invalid email or password";
+    if (error.code === EMAIL_NOT_VERIFIED_CODE) {
+      return "Please verify your email first. Check your inbox for the verification link.";
+    }
+    if (error.code === RATE_LIMITED_CODE) return "Too many attempts. Please try again later.";
+    return "Invalid email or password";
   }
   return "Something went wrong. Please try again.";
+}
+
+// Returns an error message when the caller's IP (plus `suffix`, e.g. an email) is over the limit.
+async function getRateLimitError(name: RateLimitName, suffix?: string): Promise<string | null> {
+  const ip = getClientIp(await headers());
+  const result = await checkRateLimit(name, suffix ? `${ip}:${suffix}` : ip);
+  return result.success ? null : getRateLimitMessage(result.reset);
 }
 
 export async function signInWithCredentials(
@@ -40,12 +57,15 @@ export async function signInWithCredentials(
   formData: FormData,
 ): Promise<SignInResult> {
   const rawEmail = formData.get("email");
-  const data = { email: typeof rawEmail === "string" ? rawEmail : "" };
+  const data = { email: typeof rawEmail === "string" ? rawEmail : "", needsVerification: false };
 
   const parsed = SIGN_IN_SCHEMA.safeParse({ email: rawEmail, password: formData.get("password") });
   if (!parsed.success) {
     return { success: false, data, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
+
+  const rateLimitError = await getRateLimitError("signIn", parsed.data.email);
+  if (rateLimitError) return { success: false, data, error: rateLimitError };
 
   try {
     // Redirects on success, so nothing after this runs.
@@ -57,7 +77,13 @@ export async function signInWithCredentials(
   } catch (error) {
     // Anything that isn't an AuthError (including Next's redirect) must be rethrown.
     if (!(error instanceof AuthError)) throw error;
-    return { success: false, data, error: getCredentialsErrorMessage(error) };
+    const needsVerification =
+      error instanceof CredentialsSignin && error.code === EMAIL_NOT_VERIFIED_CODE;
+    return {
+      success: false,
+      data: { email: parsed.data.email, needsVerification },
+      error: getCredentialsErrorMessage(error),
+    };
   }
 }
 
@@ -76,6 +102,9 @@ export async function requestPasswordReset(
   _prevState: ForgotPasswordResult,
   formData: FormData,
 ): Promise<ForgotPasswordResult> {
+  const rateLimitError = await getRateLimitError("forgotPassword");
+  if (rateLimitError) return { success: false, data: null, error: rateLimitError };
+
   const parsed = FORGOT_PASSWORD_SCHEMA.safeParse({ email: formData.get("email") });
   if (!parsed.success) {
     return { success: false, data: null, error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -102,6 +131,9 @@ export async function resetPassword(
   _prevState: ResetPasswordFormResult,
   formData: FormData,
 ): Promise<ResetPasswordFormResult> {
+  const rateLimitError = await getRateLimitError("resetPassword");
+  if (rateLimitError) return { success: false, data: null, error: rateLimitError };
+
   const parsed = RESET_PASSWORD_SCHEMA.safeParse({
     token: formData.get("token"),
     password: formData.get("password"),

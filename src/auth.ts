@@ -2,8 +2,13 @@ import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
-import authConfig, { CREDENTIALS_FIELDS, EMAIL_NOT_VERIFIED_CODE } from "@/auth.config";
+import authConfig, {
+  CREDENTIALS_FIELDS,
+  EMAIL_NOT_VERIFIED_CODE,
+  RATE_LIMITED_CODE,
+} from "@/auth.config";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { SIGN_IN_SCHEMA } from "@/lib/validations/auth";
 import { isEmailVerificationEnabled } from "@/lib/verification-tokens";
 
@@ -11,11 +16,20 @@ class EmailNotVerifiedError extends CredentialsSignin {
   code = EMAIL_NOT_VERIFIED_CODE;
 }
 
+class RateLimitedError extends CredentialsSignin {
+  code = RATE_LIMITED_CODE;
+}
+
 const credentialsProvider = Credentials({
   credentials: CREDENTIALS_FIELDS,
-  async authorize(credentials) {
+  async authorize(credentials, request) {
     const parsed = SIGN_IN_SCHEMA.safeParse(credentials);
     if (!parsed.success) return null;
+
+    // The sign-in action also limits (with a retry time), but direct POSTs to
+    // /api/auth/callback/credentials skip the action, so check here too.
+    const key = `${getClientIp(request.headers)}:${parsed.data.email}`;
+    if (!(await checkRateLimit("signInCallback", key)).success) throw new RateLimitedError();
 
     const user = await prisma.user.findUnique({
       where: { email: parsed.data.email },

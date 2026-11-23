@@ -1,12 +1,32 @@
-# Current Feature
+# Current Feature: Rate Limiting for Auth
 
 ## Status
 
-Completed
+In Progress
 
 ## Goals
 
+- Install `@upstash/redis` and `@upstash/ratelimit`, configured with `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+- Add a reusable `src/lib/rate-limit.ts` utility (sliding window) that returns `{ success, remaining, reset }`
+- Get the client IP from `x-forwarded-for` (Vercel), falling back to the request
+- Limit credentials sign-in to 5 attempts per 15 min, keyed by IP + email
+- Limit registration to 3 attempts per hour, keyed by IP
+- Limit forgot password to 3 attempts per hour, keyed by IP
+- Limit reset password to 5 attempts per 15 min, keyed by IP
+- Add `POST /api/auth/resend-verification`, limited to 3 attempts per 15 min, keyed by IP + email, with a "Resend verification email" button on the sign-in form when sign-in fails because the email isn't verified
+- API routes return 429 with `{ error: "Too many attempts. Please try again in X minutes." }` and a `Retry-After` header
+- Show a user-friendly "too many attempts" message inline on the auth forms
+- Fail open (allow the request) when Upstash is unavailable or not configured
+
 ## Notes
+
+- Spec: `context/features/rate-limiting-spec.md`
+- The spec lists API routes, but only `/api/auth/register` is a route here. Sign-in (`signInWithCredentials`), forgot password (`requestPasswordReset`) and reset password (`resetPassword`) are server actions in `src/actions/auth.ts`, so limiting goes in those actions (reading the IP from `headers()`) and they return an error instead of a 429.
+- Sign-in is limited in `signInWithCredentials` (gives the retry time) and again in `authorize` in `src/auth.ts` under a separate key, so direct POSTs to `/api/auth/callback/credentials` are limited too.
+- Resend verification always returns the same success message for a valid email, and only sends to unverified email/password accounts while verification is on. A new link replaces the old one.
+- Errors stay inline, matching the existing forms; no toast library.
+- Upstash free tier allows 10k requests/day.
+- Middleware-based limiting can come later.
 
 ## History
 

@@ -31,6 +31,8 @@ export type RegisterInput = z.infer<typeof REGISTER_SCHEMA>;
 
 export const FORGOT_PASSWORD_SCHEMA = z.object({ email });
 
+export const RESEND_VERIFICATION_SCHEMA = z.object({ email });
+
 export const CHANGE_PASSWORD_SCHEMA = z
   .object({
     currentPassword: z.string().min(1, "Current password is required"),

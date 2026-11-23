@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { signInWithCredentials, type SignInResult } from "@/actions/auth";
 import { FormField } from "@/components/auth/FormField";
 import { FormMessage } from "@/components/auth/FormMessage";
+import { ResendVerificationButton } from "@/components/auth/ResendVerificationButton";
 import { Button } from "@/components/ui/button";
 
 interface SignInFormProps {
@@ -16,10 +17,19 @@ const INITIAL_STATE: SignInResult = { success: false, data: null, error: null };
 
 export function SignInForm({ callbackUrl }: SignInFormProps) {
   const [state, formAction, pending] = useActionState(signInWithCredentials, INITIAL_STATE);
+  // Remounts the resend button on each attempt, so an earlier "sent" message doesn't linger.
+  const [attempt, setAttempt] = useState(0);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
+    <form
+      action={formAction}
+      onSubmit={() => setAttempt((count) => count + 1)}
+      className="flex flex-col gap-4"
+    >
       {state.error && <FormMessage variant="error">{state.error}</FormMessage>}
+      {state.data?.needsVerification && (
+        <ResendVerificationButton key={attempt} email={state.data.email} />
+      )}
       <input type="hidden" name="callbackUrl" value={callbackUrl} />
       <FormField
         id="email"
