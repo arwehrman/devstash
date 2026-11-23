@@ -47,3 +47,6 @@ next-env.d.ts
 
 # playwright mcp output
 /.playwright-mcp
+
+# generated audit reports
+/docs/audit-results

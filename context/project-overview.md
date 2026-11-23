@@ -5,7 +5,7 @@
 
 |            |                                                                         |
 | ---------- | ----------------------------------------------------------------------- |
-| **Status** | 🟡 Phase 1 in progress: database and dashboard UI done, auth next       |
+| **Status** | 🟡 Phase 1 in progress: database, dashboard UI and auth done, items next |
 | **Type**   | SaaS (Free + Pro subscription)                                          |
 | **Stack**  | Next.js · TypeScript · Prisma · Neon Postgres · Tailwind v4 · shadcn/ui |
 
@@ -545,7 +545,7 @@ git switch -c lesson-03-auth
 ### 🟢 Phase 1: MVP
 
 - [x] Project setup (Next.js, Tailwind, shadcn, Prisma, Neon)
-- [ ] Authentication (email + GitHub)
+- [x] Authentication (email + GitHub)
 - [ ] Items CRUD (system types)
 - [ ] Collections
 - [ ] Search
